@@ -36,10 +36,7 @@ pub fn apply_non_stream_response_profile_from_parts(
     fallback: &NonStreamFormatProfile,
     value: CreateChatCompletionResponse,
 ) -> Result<CreateChatCompletionResponse, MapperError> {
-    apply_non_stream_response_profile(
-        profile_from_response_parts(resp_parts, fallback),
-        value,
-    )
+    apply_non_stream_response_profile(profile_from_response_parts(resp_parts, fallback), value)
 }
 
 pub fn convert_anthropic_response(
@@ -50,8 +47,7 @@ pub fn convert_anthropic_response(
 
     let id = value.id;
     let model = value.model;
-    let usage =
-        build_usage(value.usage.input_tokens, value.usage.output_tokens, None);
+    let usage = build_usage(value.usage.input_tokens, value.usage.output_tokens, None);
 
     let (content, tool_calls) = extract_anthropic_content(value.content)?;
     let finish_reason = map_anthropic_finish_reason(value.stop_reason.as_ref());
@@ -71,10 +67,7 @@ pub fn convert_anthropic_response_from_parts(
     fallback: &NonStreamFormatProfile,
     value: anthropic::CreateMessageResponse,
 ) -> Result<CreateChatCompletionResponse, MapperError> {
-    convert_anthropic_response(
-        profile_from_response_parts(resp_parts, fallback),
-        value,
-    )
+    convert_anthropic_response(profile_from_response_parts(resp_parts, fallback), value)
 }
 
 pub fn convert_bedrock_response(
@@ -128,9 +121,7 @@ pub fn convert_bedrock_response(
                     r#type: openai::ChatCompletionToolType::Function,
                     function: openai::FunctionCall {
                         name: tool_use_block.name.clone(),
-                        arguments: serde_json::to_string(
-                            &tool_use_block.input,
-                        )?,
+                        arguments: serde_json::to_string(&tool_use_block.input)?,
                     },
                 });
             }
@@ -176,10 +167,7 @@ pub fn convert_bedrock_response_from_parts(
     fallback: &NonStreamFormatProfile,
     value: ConverseResponse,
 ) -> Result<CreateChatCompletionResponse, MapperError> {
-    convert_bedrock_response(
-        profile_from_response_parts(resp_parts, fallback),
-        value,
-    )
+    convert_bedrock_response(profile_from_response_parts(resp_parts, fallback), value)
 }
 
 fn validate_anthropic_response_profile(
@@ -223,9 +211,7 @@ fn validate_anthropic_response_profile(
     Ok(())
 }
 
-fn validate_bedrock_response_profile(
-    profile: &NonStreamFormatProfile,
-) -> Result<(), MapperError> {
+fn validate_bedrock_response_profile(profile: &NonStreamFormatProfile) -> Result<(), MapperError> {
     if profile.provider != InferenceProvider::Bedrock {
         return Err(MapperError::ProviderNotSupported(format!(
             "bedrock response interpreter does not support provider {}",
@@ -319,31 +305,24 @@ fn map_anthropic_finish_reason(
     use async_openai::types::FinishReason;
 
     match stop_reason {
-        Some(
-            anthropic::StopReason::EndTurn
-            | anthropic::StopReason::StopSequence,
-        ) => Some(FinishReason::Stop),
+        Some(anthropic::StopReason::EndTurn | anthropic::StopReason::StopSequence) => {
+            Some(FinishReason::Stop)
+        }
         Some(anthropic::StopReason::MaxTokens) => Some(FinishReason::Length),
         Some(anthropic::StopReason::ToolUse) => Some(FinishReason::ToolCalls),
-        Some(anthropic::StopReason::Refusal) => {
-            Some(FinishReason::ContentFilter)
-        }
+        Some(anthropic::StopReason::Refusal) => Some(FinishReason::ContentFilter),
         None => None,
     }
 }
 
-fn map_bedrock_finish_reason(
-    value: &str,
-) -> Option<async_openai::types::FinishReason> {
+fn map_bedrock_finish_reason(value: &str) -> Option<async_openai::types::FinishReason> {
     use async_openai::types::FinishReason;
 
     match value {
         "end_turn" | "stop_sequence" => Some(FinishReason::Stop),
         "max_tokens" => Some(FinishReason::Length),
         "tool_use" => Some(FinishReason::ToolCalls),
-        "content_filtered" | "guardrail_intervened" => {
-            Some(FinishReason::ContentFilter)
-        }
+        "content_filtered" | "guardrail_intervened" => Some(FinishReason::ContentFilter),
         _ => None,
     }
 }
@@ -355,17 +334,14 @@ mod tests {
 
     use crate::{
         endpoints::bedrock::converse::{
-            ConverseContentBlock, ConverseMessage, ConverseResponse,
-            ConverseResponseOutput, ConverseTokenUsage, ConverseToolUseBlock,
-            ConverseTrace, PromptRouterTrace,
+            ConverseContentBlock, ConverseMessage, ConverseResponse, ConverseResponseOutput,
+            ConverseTokenUsage, ConverseToolUseBlock, ConverseTrace, PromptRouterTrace,
         },
         middleware::mapper::{
             non_stream_profile::{ResponseContentMode, ToolCallMappingMode},
             non_stream_profile_data::default_non_stream_profile,
         },
-        types::{
-            extensions::MapperProfileContext, provider::InferenceProvider,
-        },
+        types::{extensions::MapperProfileContext, provider::InferenceProvider},
     };
 
     #[test]
@@ -376,9 +352,7 @@ mod tests {
             .expect("response should build")
             .into_parts()
             .0;
-        let mut profile = default_non_stream_profile(
-            &InferenceProvider::Named("deepseek".into()),
-        );
+        let mut profile = default_non_stream_profile(&InferenceProvider::Named("deepseek".into()));
         profile.response.content_mode = ResponseContentMode::Passthrough;
         parts.extensions.insert(MapperProfileContext {
             provider: InferenceProvider::Named("deepseek".into()),
@@ -403,8 +377,7 @@ mod tests {
             .expect("response should build")
             .into_parts()
             .0;
-        let anthropic_profile =
-            default_non_stream_profile(&InferenceProvider::Anthropic);
+        let anthropic_profile = default_non_stream_profile(&InferenceProvider::Anthropic);
         parts.extensions.insert(MapperProfileContext {
             provider: InferenceProvider::Anthropic,
             raw_model: "anthropic/claude-sonnet-4-0".into(),
@@ -429,10 +402,8 @@ mod tests {
             },
         };
 
-        let converted = super::convert_anthropic_response_from_parts(
-            &parts, &fallback, response,
-        )
-        .expect("response context should win over fallback");
+        let converted = super::convert_anthropic_response_from_parts(&parts, &fallback, response)
+            .expect("response context should win over fallback");
 
         assert_eq!(
             converted.choices[0].message.content.as_deref(),
@@ -552,8 +523,7 @@ mod tests {
 
     #[test]
     fn anthropic_response_profile_rejects_invalid_tool_call_mapping_mode() {
-        let mut profile =
-            default_non_stream_profile(&InferenceProvider::Anthropic);
+        let mut profile = default_non_stream_profile(&InferenceProvider::Anthropic);
         profile.response.tool_call_mapping_mode = ToolCallMappingMode::Native;
         let response = anthropic::CreateMessageResponse {
             id: "msg_invalid_mode".to_string(),
@@ -615,15 +585,13 @@ mod tests {
             }),
             trace: Some(ConverseTrace {
                 prompt_router: Some(PromptRouterTrace {
-                    invoked_model_id: Some(
-                        "anthropic.claude-3-5-sonnet-20240620-v1:0".to_string(),
-                    ),
+                    invoked_model_id: Some("anthropic.claude-3-5-sonnet-20240620-v1:0".to_string()),
                 }),
             }),
         };
 
-        let converted = super::convert_bedrock_response(&profile, response)
-            .expect("conversion should succeed");
+        let converted =
+            super::convert_bedrock_response(&profile, response).expect("conversion should succeed");
 
         assert_eq!(
             converted.choices[0].finish_reason,

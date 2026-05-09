@@ -1,17 +1,14 @@
 use async_openai::types::{
-    ChatChoiceStream, ChatCompletionMessageToolCallChunk,
-    ChatCompletionStreamResponseDelta, ChatCompletionToolType, CompletionUsage,
-    CreateChatCompletionStreamResponse, FinishReason, FunctionCallStream, Role,
+    ChatChoiceStream, ChatCompletionMessageToolCallChunk, ChatCompletionStreamResponseDelta,
+    ChatCompletionToolType, CompletionUsage, CreateChatCompletionStreamResponse, FinishReason,
+    FunctionCallStream, Role,
 };
 
 pub const OPENAI_CHAT_COMPLETION_CHUNK_OBJECT: &str = "chat.completion.chunk";
 const DEFAULT_CREATED_TIMESTAMP: u32 = 0;
 
 #[must_use]
-pub fn build_stream_usage(
-    prompt_tokens: u32,
-    completion_tokens: u32,
-) -> CompletionUsage {
+pub fn build_stream_usage(prompt_tokens: u32, completion_tokens: u32) -> CompletionUsage {
     CompletionUsage {
         prompt_tokens,
         completion_tokens,
@@ -123,9 +120,9 @@ mod tests {
     use async_openai::types::{FinishReason, Role};
 
     use super::{
-        OPENAI_CHAT_COMPLETION_CHUNK_OBJECT, build_finish_choice,
-        build_role_choice, build_stream_response, build_stream_usage,
-        build_text_choice, build_tool_call_chunk, build_tool_choice,
+        OPENAI_CHAT_COMPLETION_CHUNK_OBJECT, build_finish_choice, build_role_choice,
+        build_stream_response, build_stream_usage, build_text_choice, build_tool_call_chunk,
+        build_tool_choice,
     };
 
     #[test]
@@ -148,8 +145,7 @@ mod tests {
         );
         let choice = build_tool_choice(0, tool_call);
 
-        let delta_tool_call =
-            &choice.delta.tool_calls.as_ref().expect("tool calls")[0];
+        let delta_tool_call = &choice.delta.tool_calls.as_ref().expect("tool calls")[0];
         assert_eq!(choice.index, 0);
         assert_eq!(delta_tool_call.index, 3);
         assert_eq!(delta_tool_call.id.as_deref(), Some("call_1"));

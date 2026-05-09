@@ -106,15 +106,11 @@ enum VirtualKeyUpdateAction {
 }
 
 impl DatabaseListener {
-    pub async fn new(
-        database_url: &str,
-        app_state: AppState,
-    ) -> Result<Self, InitError> {
-        let pg_listener =
-            PgListener::connect(database_url).await.map_err(|e| {
-                error!(error = %e, "failed to create database listener");
-                InitError::DatabaseConnection(e)
-            })?;
+    pub async fn new(database_url: &str, app_state: AppState) -> Result<Self, InitError> {
+        let pg_listener = PgListener::connect(database_url).await.map_err(|e| {
+            error!(error = %e, "failed to create database listener");
+            InitError::DatabaseConnection(e)
+        })?;
 
         // Retry getting router_tx for up to 1 seconds
         let tx = tokio::time::timeout(Duration::from_secs(1), async {
@@ -129,8 +125,7 @@ impl DatabaseListener {
         .await
         .map_err(|_| InitError::RouterTxNotSet)?;
 
-        let db_poll_interval =
-            app_state.config().deployment_target.db_poll_interval;
+        let db_poll_interval = app_state.config().deployment_target.db_poll_interval;
         let listener_reconnect_interval = app_state
             .config()
             .deployment_target
@@ -229,15 +224,13 @@ impl DatabaseListener {
         };
 
         for row in updated_master_keys {
-            let should_process =
-                match self.last_master_key_updated_at.get(&row.id) {
-                    None => true,
-                    Some(last_seen) => row.updated_at > *last_seen,
-                };
+            let should_process = match self.last_master_key_updated_at.get(&row.id) {
+                None => true,
+                Some(last_seen) => row.updated_at > *last_seen,
+            };
 
             if should_process {
-                if let Some(cache) = self.app_state.0.master_key_cache.as_ref()
-                {
+                if let Some(cache) = self.app_state.0.master_key_cache.as_ref() {
                     cache.invalidate(row.id);
                 }
                 self.last_master_key_updated_at
@@ -261,8 +254,7 @@ impl DatabaseListener {
         } else {
             None
         };
-        let should_reload_providers =
-            should_reload_providers(self.last_poll_time, provider_probe);
+        let should_reload_providers = should_reload_providers(self.last_poll_time, provider_probe);
 
         if should_reload_providers {
             match self.reload_providers().await {
@@ -276,9 +268,7 @@ impl DatabaseListener {
         // -----------------------------------------------------------
         // Poll provider_configs for workspace allowlist hot-updates (F-10)
         // -----------------------------------------------------------
-        let provider_configs_changed = if let Some(last_poll) =
-            self.last_poll_time
-        {
+        let provider_configs_changed = if let Some(last_poll) = self.last_poll_time {
             self.router_store
                 .has_provider_configs_updated_since(last_poll)
                 .await
@@ -389,16 +379,10 @@ impl DatabaseListener {
                     if let Err(e) = self.pg_listener.unlisten_all().await {
                         error!(error = %e, "failed to unlisten all channels");
                     }
-                    if let Err(e) = self
-                        .pg_listener
-                        .listen("connected_cloud_gateways")
-                        .await
-                    {
+                    if let Err(e) = self.pg_listener.listen("connected_cloud_gateways").await {
                         error!(error = %e, "failed to listen on channel after reconnection");
                     } else {
-                        info!(
-                            "successfully reconnected and listening on channel"
-                        );
+                        info!("successfully reconnected and listening on channel");
                     }
                     state = ServiceState::Idle;
                 }
@@ -445,9 +429,7 @@ impl DatabaseListener {
             .set_bare_model_expand_index(bare_model_expand);
 
         // Diff: send Remove for any router that disappeared.
-        for removed_id in
-            self.current_provider_router_ids.difference(&new_router_ids)
-        {
+        for removed_id in self.current_provider_router_ids.difference(&new_router_ids) {
             info!(%removed_id, "reload_providers: removing router");
             self.tx
                 .send(Change::Remove(removed_id.clone()))
@@ -522,20 +504,18 @@ impl DatabaseListener {
         info!(channel = notification.channel(), "processing notification");
 
         if notification.channel() == "connected_cloud_gateways" {
-            let payload = serde_json::from_str::<
-                ConnectedCloudGatewaysNotification,
-            >(notification.payload()).map_err(|e| {
-                error!(error = %e, "failed to parse connected_cloud_gateways payload");
-                InternalError::Deserialize {
-                    ty: "ConnectedCloudGatewaysNotification",
-                    error: e,
-                }
-            })?;
+            let payload =
+                serde_json::from_str::<ConnectedCloudGatewaysNotification>(notification.payload())
+                    .map_err(|e| {
+                        error!(error = %e, "failed to parse connected_cloud_gateways payload");
+                        InternalError::Deserialize {
+                            ty: "ConnectedCloudGatewaysNotification",
+                            error: e,
+                        }
+                    })?;
 
             match payload {
-                ConnectedCloudGatewaysNotification::RouterConfigUpdated {
-                    ..
-                } => {
+                ConnectedCloudGatewaysNotification::RouterConfigUpdated { .. } => {
                     // Cloud routing is now derived from
                     // providers/provider_models;
                     // the routers table is no longer used.  RouterConfigUpdated
@@ -625,10 +605,7 @@ impl DatabaseListener {
                         Ok(())
                     }
                 },
-                ConnectedCloudGatewaysNotification::EnrichmentTouch {
-                    scope,
-                    id,
-                } => {
+                ConnectedCloudGatewaysNotification::EnrichmentTouch { scope, id } => {
                     let ids = self
                         .router_store
                         .list_virtual_key_ids_for_enrichment_touch(scope, id)
@@ -775,8 +752,7 @@ mod tests {
     }
 
     #[test]
-    fn classify_virtual_key_update_upserts_newer_active_row_with_fields_intact()
-    {
+    fn classify_virtual_key_update_upserts_newer_active_row_with_fields_intact() {
         let now = Utc::now();
         let last_seen = now - chrono::Duration::seconds(1);
         let mut vk = sample_vk("kh-upsert", now);
@@ -845,21 +821,16 @@ mod tests {
     #[test]
     fn deserialize_enrichment_touch_notification() {
         let j = r#"{"event":"enrichment_touch","scope":"agent","id":"550e8400-e29b-41d4-a716-446655440000"}"#;
-        let n: ConnectedCloudGatewaysNotification =
-            serde_json::from_str(j).unwrap();
+        let n: ConnectedCloudGatewaysNotification = serde_json::from_str(j).unwrap();
         match n {
-            ConnectedCloudGatewaysNotification::EnrichmentTouch {
-                scope,
-                id,
-            } => {
+            ConnectedCloudGatewaysNotification::EnrichmentTouch { scope, id } => {
                 assert_eq!(
                     scope,
                     crate::store::enrichment_touch::EnrichmentTouchScope::Agent
                 );
                 assert_eq!(
                     id,
-                    Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000")
-                        .unwrap()
+                    Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap()
                 );
             }
             _ => panic!("wrong variant"),

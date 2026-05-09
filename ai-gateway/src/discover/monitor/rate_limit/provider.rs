@@ -22,17 +22,10 @@ use weighted_balance::weight::Weight;
 
 use crate::{
     app_state::AppState,
-    config::{
-        balance::BalanceConfigInner, fallback_bridge, router::RouterConfig,
-    },
+    config::{balance::BalanceConfigInner, fallback_bridge, router::RouterConfig},
     discover::{
-        model::{
-            key::Key as ModelKey, weighted_key::WeightedKey as ModelWeightedKey,
-        },
-        provider::{
-            key::Key as ProviderKey,
-            weighted_key::WeightedKey as ProviderWeightedKey,
-        },
+        model::{key::Key as ModelKey, weighted_key::WeightedKey as ModelWeightedKey},
+        provider::{key::Key as ProviderKey, weighted_key::WeightedKey as ProviderWeightedKey},
     },
     dispatcher::{Dispatcher, DispatcherService},
     endpoints::ApiEndpoint,
@@ -49,8 +42,7 @@ const RATE_LIMIT_MONITOR_INTERVAL: Duration = Duration::from_secs(2);
 #[cfg(any(feature = "testing", test))]
 const RATE_LIMIT_MONITOR_INTERVAL: Duration = Duration::from_millis(100);
 
-pub type RateLimitMonitorMap =
-    Arc<RwLock<HashMap<RouterId, ProviderRateLimitMonitor>>>;
+pub type RateLimitMonitorMap = Arc<RwLock<HashMap<RouterId, ProviderRateLimitMonitor>>>;
 
 #[derive(Debug)]
 pub enum ProviderRateLimitMonitor {
@@ -159,17 +151,12 @@ impl ProviderMonitorInner<ProviderKey> {
     }
 
     #[allow(clippy::too_many_lines)]
-    async fn monitor(
-        self,
-        mut rx: Receiver<RateLimitEvent>,
-    ) -> Result<(), RuntimeError> {
+    async fn monitor(self, mut rx: Receiver<RateLimitEvent>) -> Result<(), RuntimeError> {
         info!(router_id = ?self.router_id, "starting rate limit monitor for latency strategy LB");
 
-        let mut rate_limited_providers: HashSet<ProviderKey> =
-            HashSet::default();
-        let mut pending_restores: FuturesUnordered<
-            ProviderRestore<ProviderKey>,
-        > = FuturesUnordered::new();
+        let mut rate_limited_providers: HashSet<ProviderKey> = HashSet::default();
+        let mut pending_restores: FuturesUnordered<ProviderRestore<ProviderKey>> =
+            FuturesUnordered::new();
 
         loop {
             tokio::select! {
@@ -285,9 +272,7 @@ impl ProviderMonitorInner<ProviderWeightedKey> {
         let provider = api_endpoint.provider();
         let endpoint_type = api_endpoint.endpoint_type();
 
-        let Some(balance_config) =
-            self.router_config.load_balance.0.get(&endpoint_type)
-        else {
+        let Some(balance_config) = self.router_config.load_balance.0.get(&endpoint_type) else {
             tracing::error!(
                 router_id = ?self.router_id,
                 endpoint_type = ?endpoint_type,
@@ -306,11 +291,7 @@ impl ProviderMonitorInner<ProviderWeightedKey> {
                                 .to_f64()
                                 .ok_or_else(|| InternalError::Internal)?,
                         );
-                        return Ok(ProviderWeightedKey::new(
-                            provider,
-                            endpoint_type,
-                            weight,
-                        ));
+                        return Ok(ProviderWeightedKey::new(provider, endpoint_type, weight));
                     }
                 }
                 tracing::error!(
@@ -326,17 +307,12 @@ impl ProviderMonitorInner<ProviderWeightedKey> {
     }
 
     #[allow(clippy::too_many_lines)]
-    async fn monitor(
-        self,
-        mut rx: Receiver<RateLimitEvent>,
-    ) -> Result<(), RuntimeError> {
+    async fn monitor(self, mut rx: Receiver<RateLimitEvent>) -> Result<(), RuntimeError> {
         debug!(router_id = ?self.router_id, "starting rate limit monitor for weighted strategy LB");
 
-        let mut rate_limited_providers: HashMap<ProviderWeightedKey, Instant> =
-            HashMap::default();
-        let mut pending_restores: FuturesUnordered<
-            ProviderRestore<ProviderWeightedKey>,
-        > = FuturesUnordered::new();
+        let mut rate_limited_providers: HashMap<ProviderWeightedKey, Instant> = HashMap::default();
+        let mut pending_restores: FuturesUnordered<ProviderRestore<ProviderWeightedKey>> =
+            FuturesUnordered::new();
 
         loop {
             tokio::select! {
@@ -463,19 +439,18 @@ impl ProviderMonitorInner<ModelWeightedKey> {
             return Err(InternalError::Internal);
         };
         let endpoint_type = event.api_endpoint.endpoint_type();
-        let model_config =
-            if let Some(BalanceConfigInner::ModelWeighted { models }) =
-                self.router_config.load_balance.0.get(&endpoint_type)
-            {
-                models.iter().find(|m| m.model == model_id)
-            } else {
-                tracing::error!(
-                    router_id = ?self.router_id,
-                    endpoint_type = ?endpoint_type,
-                    "No balance config found for endpoint type"
-                );
-                return Err(InternalError::Internal);
-            };
+        let model_config = if let Some(BalanceConfigInner::ModelWeighted { models }) =
+            self.router_config.load_balance.0.get(&endpoint_type)
+        {
+            models.iter().find(|m| m.model == model_id)
+        } else {
+            tracing::error!(
+                router_id = ?self.router_id,
+                endpoint_type = ?endpoint_type,
+                "No balance config found for endpoint type"
+            );
+            return Err(InternalError::Internal);
+        };
         let weight = model_config
             .ok_or_else(|| {
                 tracing::error!(
@@ -487,24 +462,17 @@ impl ProviderMonitorInner<ModelWeightedKey> {
             })?
             .weight;
 
-        let weight = Weight::from(
-            weight.to_f64().ok_or_else(|| InternalError::Internal)?,
-        );
+        let weight = Weight::from(weight.to_f64().ok_or_else(|| InternalError::Internal)?);
         Ok(ModelWeightedKey::new(model_id, endpoint_type, weight))
     }
 
     #[allow(clippy::too_many_lines)]
-    async fn monitor(
-        self,
-        mut rx: Receiver<RateLimitEvent>,
-    ) -> Result<(), RuntimeError> {
+    async fn monitor(self, mut rx: Receiver<RateLimitEvent>) -> Result<(), RuntimeError> {
         debug!(router_id = ?self.router_id, "starting rate limit monitor for weighted strategy LB");
 
-        let mut rate_limited_providers: HashMap<ModelWeightedKey, Instant> =
-            HashMap::default();
-        let mut pending_restores: FuturesUnordered<
-            ProviderRestore<ModelWeightedKey>,
-        > = FuturesUnordered::new();
+        let mut rate_limited_providers: HashMap<ModelWeightedKey, Instant> = HashMap::default();
+        let mut pending_restores: FuturesUnordered<ProviderRestore<ModelWeightedKey>> =
+            FuturesUnordered::new();
 
         loop {
             tokio::select! {
@@ -618,10 +586,7 @@ impl ProviderMonitorInner<ModelWeightedKey> {
 }
 
 impl ProviderMonitorInner<ModelKey> {
-    fn create_model_latency_key(
-        &self,
-        event: &RateLimitEvent,
-    ) -> Result<ModelKey, InternalError> {
+    fn create_model_latency_key(&self, event: &RateLimitEvent) -> Result<ModelKey, InternalError> {
         let Some(model_id) = event.model_id.clone() else {
             tracing::error!(
                 router_id = ?self.router_id,
@@ -635,14 +600,10 @@ impl ProviderMonitorInner<ModelKey> {
     }
 
     #[allow(clippy::too_many_lines)]
-    async fn monitor(
-        self,
-        mut rx: Receiver<RateLimitEvent>,
-    ) -> Result<(), RuntimeError> {
+    async fn monitor(self, mut rx: Receiver<RateLimitEvent>) -> Result<(), RuntimeError> {
         debug!(router_id = ?self.router_id, "starting rate limit monitor for weighted strategy LB");
 
-        let mut rate_limited_providers: HashMap<ModelKey, Instant> =
-            HashMap::default();
+        let mut rate_limited_providers: HashMap<ModelKey, Instant> = HashMap::default();
         let mut pending_restores: FuturesUnordered<ProviderRestore<ModelKey>> =
             FuturesUnordered::new();
 
@@ -852,12 +813,7 @@ impl AppState {
     ) {
         self.0.rate_limit_monitors.write().await.insert(
             router_id.clone(),
-            ProviderRateLimitMonitor::provider_weighted(
-                tx,
-                router_id,
-                router_config,
-                self.clone(),
-            ),
+            ProviderRateLimitMonitor::provider_weighted(tx, router_id, router_config, self.clone()),
         );
     }
 
@@ -869,12 +825,7 @@ impl AppState {
     ) {
         self.0.rate_limit_monitors.write().await.insert(
             router_id.clone(),
-            ProviderRateLimitMonitor::model_weighted(
-                tx,
-                router_id,
-                router_config,
-                self.clone(),
-            ),
+            ProviderRateLimitMonitor::model_weighted(tx, router_id, router_config, self.clone()),
         );
     }
 
@@ -886,12 +837,7 @@ impl AppState {
     ) {
         self.0.rate_limit_monitors.write().await.insert(
             router_id.clone(),
-            ProviderRateLimitMonitor::provider_latency(
-                tx,
-                router_id,
-                router_config,
-                self.clone(),
-            ),
+            ProviderRateLimitMonitor::provider_latency(tx, router_id, router_config, self.clone()),
         );
     }
 
@@ -903,12 +849,7 @@ impl AppState {
     ) {
         self.0.rate_limit_monitors.write().await.insert(
             router_id.clone(),
-            ProviderRateLimitMonitor::model_latency(
-                tx,
-                router_id,
-                router_config,
-                self.clone(),
-            ),
+            ProviderRateLimitMonitor::model_latency(tx, router_id, router_config, self.clone()),
         );
     }
 
@@ -916,9 +857,7 @@ impl AppState {
         &self,
         router_id: &RouterId,
     ) -> Result<Receiver<RateLimitEvent>, InitError> {
-        let Some(rx) =
-            self.0.rate_limit_receivers.write().await.remove(router_id)
-        else {
+        let Some(rx) = self.0.rate_limit_receivers.write().await.remove(router_id) else {
             warn!(router_id = ?router_id, "No rate limit receiver found for router");
             return Err(InitError::RateLimitChannelsNotInitialized(
                 router_id.clone(),

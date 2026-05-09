@@ -16,9 +16,7 @@ const DEFAULT_TOP_LEVEL_TYPE: &str = "error";
 /// Deserialize bytes into [`AnthropicApiError`], accepting strict Anthropic
 /// shape and several common provider variants.
 #[must_use]
-pub(crate) fn deserialize_anthropic_error_lenient(
-    bytes: &[u8],
-) -> AnthropicApiError {
+pub(crate) fn deserialize_anthropic_error_lenient(bytes: &[u8]) -> AnthropicApiError {
     if let Ok(v) = serde_json::from_slice::<AnthropicApiError>(bytes) {
         return v;
     }
@@ -141,7 +139,8 @@ mod tests {
 
     #[test]
     fn strict_anthropic_shape_round_trips() {
-        let bytes = br#"{"type":"error","error":{"type":"invalid_request_error","message":"bad request"}}"#;
+        let bytes =
+            br#"{"type":"error","error":{"type":"invalid_request_error","message":"bad request"}}"#;
         let e = deserialize_anthropic_error_lenient(bytes);
         assert_eq!(e.kind, "error");
         assert_eq!(e.error.kind, "invalid_request_error");

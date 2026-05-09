@@ -3,30 +3,22 @@
 use std::str::FromStr;
 
 use crate::{
-    error::{
-        api::ApiError, internal::InternalError,
-        invalid_req::InvalidRequestError,
-    },
+    error::{api::ApiError, internal::InternalError, invalid_req::InvalidRequestError},
     types::{model_id::ModelId, provider::InferenceProvider},
 };
 
 /// Route using `ModelId::from_str` on a bare model name (e.g. `org/model`
 /// style).
-pub(crate) fn provider_from_bare_model(
-    model: &str,
-) -> Result<InferenceProvider, ApiError> {
-    let source_model =
-        ModelId::from_str(model).map_err(InternalError::MapperError)?;
+pub(crate) fn provider_from_bare_model(model: &str) -> Result<InferenceProvider, ApiError> {
+    let source_model = ModelId::from_str(model).map_err(InternalError::MapperError)?;
     match source_model {
         ModelId::ModelIdWithVersion { provider, .. } => Ok(provider),
         ModelId::Bedrock(_) => Ok(InferenceProvider::Bedrock),
         ModelId::Ollama(_) => Ok(InferenceProvider::Ollama),
-        ModelId::Unknown(_) => {
-            Err(InvalidRequestError::UnsupportedEndpoint(format!(
-                "provider for the given model: '{source_model}' not supported"
-            ))
-            .into())
-        }
+        ModelId::Unknown(_) => Err(InvalidRequestError::UnsupportedEndpoint(format!(
+            "provider for the given model: '{source_model}' not supported"
+        ))
+        .into()),
     }
 }
 
@@ -119,8 +111,7 @@ mod tests {
 
     #[test]
     fn allowed_multi_happy() {
-        let list =
-            vec![InferenceProvider::OpenAI, InferenceProvider::Anthropic];
+        let list = vec![InferenceProvider::OpenAI, InferenceProvider::Anthropic];
         let provider = resolve_unified_target_provider(
             false,
             InferenceProvider::OpenAI,
@@ -138,8 +129,7 @@ mod tests {
     /// Bedrock]`) without `OpenAI` so the reject branch is actually hit.
     #[test]
     fn allowed_multi_rejects() {
-        let list =
-            vec![InferenceProvider::Anthropic, InferenceProvider::Bedrock];
+        let list = vec![InferenceProvider::Anthropic, InferenceProvider::Bedrock];
         let err = resolve_unified_target_provider(
             false,
             InferenceProvider::OpenAI,
@@ -148,9 +138,7 @@ mod tests {
         )
         .expect_err("resolve should reject");
         match err {
-            ApiError::InvalidRequest(
-                InvalidRequestError::UnsupportedGatewayModel(_),
-            ) => {}
+            ApiError::InvalidRequest(InvalidRequestError::UnsupportedGatewayModel(_)) => {}
             other => panic!("expected UnsupportedGatewayModel, got {other:?}"),
         }
     }
@@ -160,8 +148,7 @@ mod tests {
     /// branch; we use `[Anthropic, Bedrock]` so the reject path runs.
     #[test]
     fn allowed_multi_compat_not_in_list() {
-        let list =
-            vec![InferenceProvider::Anthropic, InferenceProvider::Bedrock];
+        let list = vec![InferenceProvider::Anthropic, InferenceProvider::Bedrock];
         let err = resolve_unified_target_provider(
             true,
             InferenceProvider::OpenAI,
@@ -170,9 +157,7 @@ mod tests {
         )
         .expect_err("resolve should reject");
         match err {
-            ApiError::InvalidRequest(
-                InvalidRequestError::UnsupportedGatewayModel(_),
-            ) => {}
+            ApiError::InvalidRequest(InvalidRequestError::UnsupportedGatewayModel(_)) => {}
             other => panic!("expected UnsupportedGatewayModel, got {other:?}"),
         }
     }

@@ -8,23 +8,18 @@ use tower::{Layer, Service};
 
 use crate::{
     app_state::AppState,
-    error::{
-        api::ApiError, internal::InternalError,
-        invalid_req::InvalidRequestError,
-    },
+    error::{api::ApiError, internal::InternalError, invalid_req::InvalidRequestError},
     middleware::{
         large_context::{
-            headers::parse_large_context_headers,
-            heuristics::extract_fallback_model_candidates,
+            headers::parse_large_context_headers, heuristics::extract_fallback_model_candidates,
         },
         model_support::parse::{
-            MODEL_SUPPORT_MAX_BODY_BYTES, catalog_redis_key,
-            model_field_from_json_body, split_provider_model,
+            MODEL_SUPPORT_MAX_BODY_BYTES, catalog_redis_key, model_field_from_json_body,
+            split_provider_model,
         },
     },
     types::{
-        extensions::RequestKind, provider::InferenceProvider, request::Request,
-        response::Response,
+        extensions::RequestKind, provider::InferenceProvider, request::Request, response::Response,
     },
 };
 
@@ -69,8 +64,7 @@ pub(crate) async fn gateway_model_supported(
             if canonical_provider.eq_ignore_ascii_case(provider_raw) {
                 false
             } else {
-                let canonical_key =
-                    catalog_redis_key(canonical_provider, model_raw);
+                let canonical_key = catalog_redis_key(canonical_provider, model_raw);
                 match client.key_exists(&canonical_key).await {
                     Ok(v) => v,
                     Err(e) => {
@@ -128,10 +122,7 @@ pub(crate) async fn gateway_model_supported(
 /// - `Ok(full_model)` when exactly one provider matches.
 /// - `Err(UnsupportedGatewayModel)` when no provider matches.
 /// - `Err(AmbiguousBareModel)` when multiple providers match.
-async fn resolve_bare_model(
-    app_state: &AppState,
-    bare_model_id: &str,
-) -> Result<String, ApiError> {
+async fn resolve_bare_model(app_state: &AppState, bare_model_id: &str) -> Result<String, ApiError> {
     let index = app_state.get_bare_model_expand_index();
     let mut candidates = index.gateway_models_for_bare_id(bare_model_id);
 
@@ -150,9 +141,7 @@ async fn resolve_bare_model(
 
     match candidates.len() {
         0 => Err(ApiError::InvalidRequest(
-            InvalidRequestError::UnsupportedGatewayModel(
-                bare_model_id.to_string(),
-            ),
+            InvalidRequestError::UnsupportedGatewayModel(bare_model_id.to_string()),
         )),
         1 => Ok(candidates.into_iter().next().expect("len checked")),
         _ => Err(ApiError::InvalidRequest(
@@ -178,10 +167,7 @@ fn rewrite_model_in_body(body: &[u8], new_model: &str) -> Option<bytes::Bytes> {
 mod tests {
     use http::Method;
 
-    use super::{
-        canonical_provider_code, rewrite_model_in_body,
-        should_inspect_post_body,
-    };
+    use super::{canonical_provider_code, rewrite_model_in_body, should_inspect_post_body};
 
     #[test]
     fn inspects_post_only() {
@@ -193,19 +179,14 @@ mod tests {
 
     #[test]
     fn canonical_provider_code_maps_gemini_to_google() {
-        assert_eq!(
-            canonical_provider_code("gemini").as_deref(),
-            Some("google")
-        );
+        assert_eq!(canonical_provider_code("gemini").as_deref(), Some("google"));
     }
 
     #[test]
     fn rewrite_model_replaces_field() {
         let body = br#"{"model":"gpt-4o-mini","messages":[]}"#;
-        let rewritten = rewrite_model_in_body(body, "openai/gpt-4o-mini")
-            .expect("should rewrite");
-        let v: serde_json::Value =
-            serde_json::from_slice(&rewritten).expect("valid json");
+        let rewritten = rewrite_model_in_body(body, "openai/gpt-4o-mini").expect("should rewrite");
+        let v: serde_json::Value = serde_json::from_slice(&rewritten).expect("valid json");
         assert_eq!(v["model"], "openai/gpt-4o-mini");
         assert!(v["messages"].is_array());
     }
@@ -225,10 +206,8 @@ mod tests {
     #[test]
     fn rewrite_model_preserves_other_fields() {
         let body = br#"{"model":"GPT-5","temperature":0.7,"max_tokens":100}"#;
-        let rewritten = rewrite_model_in_body(body, "openai/gpt-5")
-            .expect("should rewrite");
-        let v: serde_json::Value =
-            serde_json::from_slice(&rewritten).expect("valid json");
+        let rewritten = rewrite_model_in_body(body, "openai/gpt-5").expect("should rewrite");
+        let v: serde_json::Value = serde_json::from_slice(&rewritten).expect("valid json");
         assert_eq!(v["model"], "openai/gpt-5");
         assert_eq!(v["temperature"], 0.7);
         assert_eq!(v["max_tokens"], 100);
@@ -259,20 +238,14 @@ pub struct ModelSupportService<S> {
 
 impl<S> Service<Request> for ModelSupportService<S>
 where
-    S: Service<Request, Response = Response, Error = ApiError>
-        + Clone
-        + Send
-        + 'static,
+    S: Service<Request, Response = Response, Error = ApiError> + Clone + Send + 'static,
     S::Future: Send + 'static,
 {
     type Response = Response;
     type Error = ApiError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    fn poll_ready(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
 
@@ -306,15 +279,14 @@ where
             };
 
             let request_kind = parts.extensions.get::<RequestKind>().copied();
-            let large_context_headers =
-                if matches!(request_kind, Some(RequestKind::UnifiedApi)) {
-                    Some(
-                        parse_large_context_headers(&parts.headers)
-                            .map_err(ApiError::InvalidRequest)?,
-                    )
-                } else {
-                    None
-                };
+            let large_context_headers = if matches!(request_kind, Some(RequestKind::UnifiedApi)) {
+                Some(
+                    parse_large_context_headers(&parts.headers)
+                        .map_err(ApiError::InvalidRequest)?,
+                )
+            } else {
+                None
+            };
             let body_model = model_field_from_json_body(&bytes);
             let handler_enabled = large_context_headers
                 .as_ref()
@@ -325,9 +297,9 @@ where
                 body_model
                     .as_deref()
                     .or_else(|| {
-                        large_context_headers.as_ref().and_then(|headers| {
-                            headers.model_override.as_deref()
-                        })
+                        large_context_headers
+                            .as_ref()
+                            .and_then(|headers| headers.model_override.as_deref())
                     })
                     .map(extract_fallback_model_candidates)
                     .unwrap_or_default()
@@ -339,69 +311,49 @@ where
             };
 
             if model_candidates.is_empty() {
-                let req =
-                    Request::from_parts(parts, Body::new(Full::new(bytes)));
+                let req = Request::from_parts(parts, Body::new(Full::new(bytes)));
                 return inner.call(req).await;
             }
 
             if matches!(request_kind, Some(RequestKind::CustomProvider)) {
-                let req =
-                    Request::from_parts(parts, Body::new(Full::new(bytes)));
+                let req = Request::from_parts(parts, Body::new(Full::new(bytes)));
                 return inner.call(req).await;
             }
 
-            let is_direct_proxy =
-                matches!(request_kind, Some(RequestKind::DirectProxy));
+            let is_direct_proxy = matches!(request_kind, Some(RequestKind::DirectProxy));
             let mut bytes = bytes;
 
             for candidate in &model_candidates {
                 if is_direct_proxy || candidate.contains('/') {
                     let Ok(parsed) = split_provider_model(candidate) else {
                         return Err(ApiError::InvalidRequest(
-                            InvalidRequestError::UnsupportedGatewayModel(
-                                candidate.clone(),
-                            ),
+                            InvalidRequestError::UnsupportedGatewayModel(candidate.clone()),
                         ));
                     };
-                    let supported = gateway_model_supported(
-                        &app_state,
-                        parsed.provider_raw,
-                        parsed.model_raw,
-                    )
-                    .await?;
+                    let supported =
+                        gateway_model_supported(&app_state, parsed.provider_raw, parsed.model_raw)
+                            .await?;
                     if !supported {
                         return Err(ApiError::InvalidRequest(
-                            InvalidRequestError::UnsupportedGatewayModel(
-                                candidate.clone(),
-                            ),
+                            InvalidRequestError::UnsupportedGatewayModel(candidate.clone()),
                         ));
                     }
                 } else {
-                    let resolved =
-                        resolve_bare_model(&app_state, candidate).await?;
-                    if let Some(rewritten) =
-                        rewrite_model_in_body(&bytes, &resolved)
-                    {
+                    let resolved = resolve_bare_model(&app_state, candidate).await?;
+                    if let Some(rewritten) = rewrite_model_in_body(&bytes, &resolved) {
                         bytes = rewritten;
                     }
                     let Ok(parsed) = split_provider_model(&resolved) else {
                         return Err(ApiError::InvalidRequest(
-                            InvalidRequestError::UnsupportedGatewayModel(
-                                resolved,
-                            ),
+                            InvalidRequestError::UnsupportedGatewayModel(resolved),
                         ));
                     };
-                    let supported = gateway_model_supported(
-                        &app_state,
-                        parsed.provider_raw,
-                        parsed.model_raw,
-                    )
-                    .await?;
+                    let supported =
+                        gateway_model_supported(&app_state, parsed.provider_raw, parsed.model_raw)
+                            .await?;
                     if !supported {
                         return Err(ApiError::InvalidRequest(
-                            InvalidRequestError::UnsupportedGatewayModel(
-                                resolved,
-                            ),
+                            InvalidRequestError::UnsupportedGatewayModel(resolved),
                         ));
                     }
                 }

@@ -3,9 +3,8 @@
 //! expect Chat Completions SSE / JSON.
 
 use async_openai::types::{
-    ChatChoice, ChatChoiceStream, ChatCompletionResponseMessage,
-    ChatCompletionStreamResponseDelta, CompletionUsage,
-    CreateChatCompletionResponse, CreateChatCompletionStreamResponse,
+    ChatChoice, ChatChoiceStream, ChatCompletionResponseMessage, ChatCompletionStreamResponseDelta,
+    CompletionUsage, CreateChatCompletionResponse, CreateChatCompletionStreamResponse,
     FinishReason, Role,
     responses::{Content, OutputContent, Response, Status},
 };
@@ -16,8 +15,7 @@ use serde_json::Value;
 use crate::{
     error::{api::ApiError, internal::InternalError},
     middleware::mapper::stream_normalizer::{
-        build_finish_choice, build_role_choice, build_stream_response,
-        build_text_choice,
+        build_finish_choice, build_role_choice, build_stream_response, build_text_choice,
     },
 };
 
@@ -51,10 +49,7 @@ fn put_sse_record(buf: &mut BytesMut, payload: &[u8]) {
     buf.put("\n\n".as_bytes());
 }
 
-fn put_sse_json<T: Serialize>(
-    buf: &mut BytesMut,
-    val: &T,
-) -> Result<(), ApiError> {
+fn put_sse_json<T: Serialize>(buf: &mut BytesMut, val: &T) -> Result<(), ApiError> {
     let json = serde_json::to_vec(val).map_err(|error| {
         ApiError::Internal(InternalError::Serialize {
             ty: std::any::type_name::<T>(),
@@ -88,10 +83,7 @@ impl BridgeStreamState {
         self.model.clone().unwrap_or_else(|| "unknown".to_string())
     }
 
-    fn push_role_if_needed(
-        &mut self,
-        buf: &mut BytesMut,
-    ) -> Result<(), ApiError> {
+    fn push_role_if_needed(&mut self, buf: &mut BytesMut) -> Result<(), ApiError> {
         if self.role_sent {
             return Ok(());
         }
@@ -144,8 +136,7 @@ impl BridgeStreamState {
             "response.output_text.delta"
             | "response.reasoning_text.delta"
             | "response.reasoning_summary_text.delta" => {
-                let delta =
-                    v.get("delta").and_then(|d| d.as_str()).unwrap_or("");
+                let delta = v.get("delta").and_then(|d| d.as_str()).unwrap_or("");
                 if delta.is_empty() {
                     return Ok(None);
                 }
@@ -159,8 +150,7 @@ impl BridgeStreamState {
                 put_sse_json(&mut buf, &chunk)?;
             }
             "response.refusal.delta" => {
-                let delta =
-                    v.get("delta").and_then(|d| d.as_str()).unwrap_or("");
+                let delta = v.get("delta").and_then(|d| d.as_str()).unwrap_or("");
                 if delta.is_empty() {
                     return Ok(None);
                 }
@@ -262,9 +252,7 @@ fn finish_reason_for_status(status: &Status) -> Option<FinishReason> {
     }
 }
 
-pub(super) fn non_stream_responses_body_to_chat_completion(
-    body: &[u8],
-) -> Result<Bytes, ApiError> {
+pub(super) fn non_stream_responses_body_to_chat_completion(body: &[u8]) -> Result<Bytes, ApiError> {
     let resp: Response = serde_json::from_slice(body).map_err(|error| {
         ApiError::Internal(InternalError::Deserialize {
             ty: std::any::type_name::<Response>(),
@@ -339,9 +327,7 @@ mod tests {
         assert!(o1.is_none());
 
         let o2 = st
-            .process_upstream_sse_json(
-                br#"{"type":"response.output_text.delta","delta":"hi"}"#,
-            )
+            .process_upstream_sse_json(br#"{"type":"response.output_text.delta","delta":"hi"}"#)
             .unwrap()
             .expect("chunk");
         acc.put(o2.as_ref());

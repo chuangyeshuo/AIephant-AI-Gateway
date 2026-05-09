@@ -10,10 +10,7 @@ use http::uri::PathAndQuery;
 use regex::Regex;
 
 use crate::{
-    error::{
-        api::ApiError, internal::InternalError,
-        invalid_req::InvalidRequestError,
-    },
+    error::{api::ApiError, internal::InternalError, invalid_req::InvalidRequestError},
     router::FORCED_ROUTING_HEADER,
     types::{
         extensions::{MapperContext, RequestKind},
@@ -29,8 +26,7 @@ use crate::{
 /// - `/ai[/path][?query]` or `/v1[/path][?query]` - Unified API pattern (`/v1`
 ///   matches OpenAI-style base URLs)
 /// - `/{provider}[/path][?query]` - Direct proxy pattern
-const UNIFIED_URL_REGEX: &str =
-    r"^/(?P<first_segment>[^/?]+)(?P<rest>/[^?]*)?(?P<query>\?.*)?$";
+const UNIFIED_URL_REGEX: &str = r"^/(?P<first_segment>[^/?]+)(?P<rest>/[^?]*)?(?P<query>\?.*)?$";
 
 /// Legacy regex for router-specific matching (kept for backward compatibility)
 const ROUTER_URL_REGEX: &str =
@@ -85,22 +81,18 @@ impl<S> RouterDetailsService<S> {
             let first_segment = captures
                 .name("first_segment")
                 .ok_or_else(|| {
-                    ApiError::InvalidRequest(InvalidRequestError::NotFound(
-                        path.to_string(),
-                    ))
+                    ApiError::InvalidRequest(InvalidRequestError::NotFound(path.to_string()))
                 })?
                 .as_str();
 
             let is_router_request = first_segment == "router";
-            let is_unified_api_request =
-                first_segment == "ai" || first_segment == "v1";
+            let is_unified_api_request = first_segment == "ai" || first_segment == "v1";
 
             let rest_path = captures
                 .name("rest")
                 .map(|m| m.as_str())
                 .unwrap_or_default();
-            if let Some(forced_routing) =
-                request.headers().get(FORCED_ROUTING_HEADER)
+            if let Some(forced_routing) = request.headers().get(FORCED_ROUTING_HEADER)
                 && let Ok(forced_routing) = forced_routing.to_str()
                 && (is_router_request || is_unified_api_request)
             {
@@ -148,9 +140,7 @@ fn extract_router_id_and_path<'a>(
         let id_str = captures
             .name("id")
             .ok_or_else(|| {
-                ApiError::InvalidRequest(InvalidRequestError::NotFound(
-                    path.to_string(),
-                ))
+                ApiError::InvalidRequest(InvalidRequestError::NotFound(path.to_string()))
             })?
             .as_str();
 
@@ -173,10 +163,7 @@ fn extract_router_id_and_path<'a>(
     }
 }
 
-fn extract_path_and_query(
-    path: &str,
-    query: Option<&str>,
-) -> Result<PathAndQuery, ApiError> {
+fn extract_path_and_query(path: &str, query: Option<&str>) -> Result<PathAndQuery, ApiError> {
     let path_and_query = if let Some(query_params) = query {
         PathAndQuery::from_str(&format!("{path}?{query_params}"))
     } else {
@@ -198,10 +185,7 @@ where
     type Error = ApiError;
     type Future = Either<Ready<Result<Self::Response, Self::Error>>, S::Future>;
 
-    fn poll_ready(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx).map_err(Into::into)
     }
 
@@ -213,13 +197,13 @@ where
 
         match &route_type {
             RouteType::Router { id, path } => {
-                let extracted_path_and_query =
-                    match extract_path_and_query(path, req.uri().query()) {
-                        Ok(p) => p,
-                        Err(e) => {
-                            return Either::Left(ready(Err(e)));
-                        }
-                    };
+                let extracted_path_and_query = match extract_path_and_query(path, req.uri().query())
+                {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return Either::Left(ready(Err(e)));
+                    }
+                };
 
                 req.extensions_mut().insert(extracted_path_and_query);
                 req.extensions_mut().insert(RequestKind::Router);
@@ -227,24 +211,24 @@ where
             }
             RouteType::UnifiedApi { path } => {
                 tracing::info!(path = %path, "unified api request path");
-                let extracted_path_and_query =
-                    match extract_path_and_query(path, req.uri().query()) {
-                        Ok(p) => p,
-                        Err(e) => {
-                            return Either::Left(ready(Err(e)));
-                        }
-                    };
+                let extracted_path_and_query = match extract_path_and_query(path, req.uri().query())
+                {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return Either::Left(ready(Err(e)));
+                    }
+                };
                 req.extensions_mut().insert(extracted_path_and_query);
                 req.extensions_mut().insert(RequestKind::UnifiedApi);
             }
             RouteType::DirectProxy { path, .. } => {
-                let extracted_path_and_query =
-                    match extract_path_and_query(path, req.uri().query()) {
-                        Ok(p) => p,
-                        Err(e) => {
-                            return Either::Left(ready(Err(e)));
-                        }
-                    };
+                let extracted_path_and_query = match extract_path_and_query(path, req.uri().query())
+                {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return Either::Left(ready(Err(e)));
+                    }
+                };
                 req.extensions_mut().insert(extracted_path_and_query);
                 req.extensions_mut().insert(RequestKind::DirectProxy);
                 // for the passthrough endpoints, we don't want to
@@ -284,17 +268,14 @@ mod tests {
 
     #[test]
     fn test_unified_regex() {
-        let regex =
-            Regex::new(UNIFIED_URL_REGEX).expect("Regex should be valid");
+        let regex = Regex::new(UNIFIED_URL_REGEX).expect("Regex should be valid");
 
         // --- Router patterns ---
         assert!(regex.is_match("/router/default"));
         assert!(regex.is_match("/router/default/chat/completions"));
         assert!(regex.is_match("/router/default?user=test"));
         assert!(regex.is_match("/router/my-router"));
-        assert!(regex.is_match(
-            "/router/my-router/v1/chat/completions?user=test&limit=10"
-        ));
+        assert!(regex.is_match("/router/my-router/v1/chat/completions?user=test&limit=10"));
 
         // --- Unified API patterns ---
         assert!(regex.is_match("/ai"));
@@ -322,24 +303,19 @@ mod tests {
 
     #[test]
     fn test_router_regex() {
-        let regex =
-            Regex::new(ROUTER_URL_REGEX).expect("Regex should be valid");
+        let regex = Regex::new(ROUTER_URL_REGEX).expect("Regex should be valid");
 
         // --- Positive cases ---
         assert!(regex.is_match("/router/default"));
         assert!(regex.is_match("/router/default/chat/completions"));
         assert!(regex.is_match("/router/default?user=test"));
         assert!(regex.is_match("/router/my-router"));
-        assert!(regex.is_match(
-            "/router/my-router/v1/chat/completions?user=test&limit=10"
-        ));
+        assert!(regex.is_match("/router/my-router/v1/chat/completions?user=test&limit=10"));
 
         // --- Negative cases ---
         assert!(!regex.is_match("/router"));
         assert!(!regex.is_match("/router/"));
-        assert!(!regex.is_match(
-            "/router/this-id-is-way-too-long-to-be-valid-as-a-router-id"
-        ));
+        assert!(!regex.is_match("/router/this-id-is-way-too-long-to-be-valid-as-a-router-id"));
         assert!(!regex.is_match("/other/path"));
     }
 
@@ -359,15 +335,10 @@ mod tests {
         );
 
         // Default router id with API path and query params
-        let path_default_with_path_query =
-            "/router/my-router/chat/completions?user=test";
+        let path_default_with_path_query = "/router/my-router/chat/completions?user=test";
         let expected_api_path_default_with_path_query = "/chat/completions";
         assert_eq!(
-            extract_router_id_and_path(
-                &url_regex,
-                path_default_with_path_query
-            )
-            .unwrap(),
+            extract_router_id_and_path(&url_regex, path_default_with_path_query).unwrap(),
             (
                 RouterId::Named(CompactString::from("my-router")),
                 expected_api_path_default_with_path_query
@@ -389,8 +360,7 @@ mod tests {
         let path_named_with_path = "/router/my-router/v1/chat/completions";
         let expected_api_path_named_with_path = "/v1/chat/completions";
         assert_eq!(
-            extract_router_id_and_path(&url_regex, path_named_with_path)
-                .unwrap(),
+            extract_router_id_and_path(&url_regex, path_named_with_path).unwrap(),
             (
                 RouterId::Named(CompactString::from("my-router")),
                 expected_api_path_named_with_path
@@ -401,8 +371,7 @@ mod tests {
         let path_named_query_only = "/router/my-router?foo=bar";
         let expected_api_path_named_query_only = "";
         assert_eq!(
-            extract_router_id_and_path(&url_regex, path_named_query_only)
-                .unwrap(),
+            extract_router_id_and_path(&url_regex, path_named_query_only).unwrap(),
             (
                 RouterId::Named(CompactString::from("my-router")),
                 expected_api_path_named_query_only
@@ -416,8 +385,7 @@ mod tests {
             Err(ApiError::InvalidRequest(_))
         ));
 
-        let path_id_too_long =
-            "/router/this-id-is-way-too-long-to-be-valid-as-a-router-id";
+        let path_id_too_long = "/router/this-id-is-way-too-long-to-be-valid-as-a-router-id";
         assert!(matches!(
             extract_router_id_and_path(&url_regex, path_id_too_long),
             Err(ApiError::InvalidRequest(_))

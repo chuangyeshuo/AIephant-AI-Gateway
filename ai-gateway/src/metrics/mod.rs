@@ -115,9 +115,7 @@ impl Metrics {
             .build();
         let gateway_in_flight_redis_degraded = meter
             .u64_counter("gateway_in_flight_redis_degraded_total")
-            .with_description(
-                "Whole-gateway in-flight: Redis error, used memory fallback",
-            )
+            .with_description("Whole-gateway in-flight: Redis error, used memory fallback")
             .build();
         let rate_limit_redis_degraded_gauge = meter
             .u64_gauge("ai_gateway_rate_limit_redis_degraded")
@@ -186,9 +184,7 @@ impl VkMetrics {
     pub fn new(meter: &Meter) -> Self {
         let model_denied = meter
             .u64_counter("vk_model_denied")
-            .with_description(
-                "Requests blocked by virtual key model access policy",
-            )
+            .with_description("Requests blocked by virtual key model access policy")
             .build();
         let content_filter_allowed = meter
             .u64_counter("content_filter_allowed")
@@ -200,15 +196,11 @@ impl VkMetrics {
             .build();
         let content_filter_unavailable = meter
             .u64_counter("content_filter_unavailable")
-            .with_description(
-                "Content filter unavailable or error when evaluating",
-            )
+            .with_description("Content filter unavailable or error when evaluating")
             .build();
         let policy_piicache_request_body = meter
             .u64_counter("policy_piicache_request_body")
-            .with_description(
-                "Policy Evaluate body attachment driven by Redis piicache flag",
-            )
+            .with_description("Policy Evaluate body attachment driven by Redis piicache flag")
             .build();
         let policy_prompt_cache_messages = meter
             .u64_counter("policy_prompt_cache_messages")
@@ -219,15 +211,11 @@ impl VkMetrics {
             .build();
         let pg_fallback_heal = meter
             .u64_counter("vk_pg_fallback_heal_total")
-            .with_description(
-                "Virtual key auth: PG fallback found row and upserted cache",
-            )
+            .with_description("Virtual key auth: PG fallback found row and upserted cache")
             .build();
         let pg_fallback_db_errors = meter
             .u64_counter("vk_pg_fallback_db_errors_total")
-            .with_description(
-                "Virtual key auth: PG fallback query error (auth still 401)",
-            )
+            .with_description("Virtual key auth: PG fallback query error (auth still 401)")
             .build();
         Self {
             model_denied,

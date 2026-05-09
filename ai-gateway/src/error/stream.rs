@@ -6,9 +6,7 @@ use thiserror::Error;
 use super::api::ErrorResponse;
 use crate::{
     error::api::ErrorDetails,
-    middleware::mapper::openai::{
-        INVALID_REQUEST_ERROR_TYPE, SERVER_ERROR_TYPE,
-    },
+    middleware::mapper::openai::{INVALID_REQUEST_ERROR_TYPE, SERVER_ERROR_TYPE},
     types::json::Json,
 };
 
@@ -28,10 +26,9 @@ impl StreamError {
                 reqwest_eventsource::Error::Utf8(_)
                 | reqwest_eventsource::Error::Parser(_)
                 | reqwest_eventsource::Error::Transport(_) => true,
-                reqwest_eventsource::Error::InvalidStatusCode(
-                    status_code,
-                    _response,
-                ) => status_code.is_server_error(),
+                reqwest_eventsource::Error::InvalidStatusCode(status_code, _response) => {
+                    status_code.is_server_error()
+                }
 
                 reqwest_eventsource::Error::InvalidLastEventId(_)
                 | reqwest_eventsource::Error::InvalidContentType(_, _)
@@ -46,10 +43,8 @@ impl IntoResponse for StreamError {
     fn into_response(self) -> Response {
         match self {
             Self::StreamError(error) => {
-                if let reqwest_eventsource::Error::InvalidStatusCode(
-                    status_code,
-                    _response,
-                ) = &*error
+                if let reqwest_eventsource::Error::InvalidStatusCode(status_code, _response) =
+                    &*error
                 {
                     if status_code.is_server_error() {
                         tracing::error!(error = %error, "upstream server error in stream");
@@ -72,9 +67,7 @@ impl IntoResponse for StreamError {
                             Json(ErrorResponse {
                                 error: ErrorDetails {
                                     message: error.to_string(),
-                                    r#type: Some(
-                                        INVALID_REQUEST_ERROR_TYPE.to_string(),
-                                    ),
+                                    r#type: Some(INVALID_REQUEST_ERROR_TYPE.to_string()),
                                     param: None,
                                     code: None,
                                 },

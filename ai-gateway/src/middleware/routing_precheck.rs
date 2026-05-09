@@ -15,14 +15,9 @@ use tower::{Layer, Service};
 
 use crate::{
     endpoints::ApiEndpoint,
-    error::{
-        api::ApiError, internal::InternalError,
-        invalid_req::InvalidRequestError,
-    },
+    error::{api::ApiError, internal::InternalError, invalid_req::InvalidRequestError},
     router::{router_details::RouteType, unified_api::UnifiedApi},
-    types::{
-        provider::InferenceProvider, request::Request, response::Response,
-    },
+    types::{provider::InferenceProvider, request::Request, response::Response},
 };
 
 /// Providers that have a direct-proxy stack configured (same keys as
@@ -34,9 +29,7 @@ pub struct RoutingPrecheckLayer {
 
 impl RoutingPrecheckLayer {
     #[must_use]
-    pub fn new(
-        direct_proxy_providers: Arc<FxHashSet<InferenceProvider>>,
-    ) -> Self {
+    pub fn new(direct_proxy_providers: Arc<FxHashSet<InferenceProvider>>) -> Self {
         Self {
             direct_proxy_providers,
         }
@@ -103,9 +96,7 @@ pub(crate) fn path_requires_post(path: &str) -> bool {
     }
     // Legacy completions: bare `completions` or `.../completions` (not
     // `.../chat/completions`, handled above).
-    if p == "completions"
-        || (p.ends_with("/completions") && !p.ends_with("/chat/completions"))
-    {
+    if p == "completions" || (p.ends_with("/completions") && !p.ends_with("/chat/completions")) {
         return true;
     }
     false
@@ -127,20 +118,17 @@ fn check_method(method: &Method, path: &str) -> Result<(), ApiError> {
     Ok(())
 }
 
-fn precheck(
-    req: &Request,
-    direct_allowed: &FxHashSet<InferenceProvider>,
-) -> Result<(), ApiError> {
+fn precheck(req: &Request, direct_allowed: &FxHashSet<InferenceProvider>) -> Result<(), ApiError> {
     let Some(route_type) = req.extensions().get::<RouteType>() else {
         return Err(ApiError::InvalidRequest(InvalidRequestError::NotFound(
             req.uri().path().to_string(),
         )));
     };
 
-    let path_and_query =
-        req.extensions().get::<PathAndQuery>().ok_or_else(|| {
-            ApiError::Internal(InternalError::ExtensionNotFound("PathAndQuery"))
-        })?;
+    let path_and_query = req
+        .extensions()
+        .get::<PathAndQuery>()
+        .ok_or_else(|| ApiError::Internal(InternalError::ExtensionNotFound("PathAndQuery")))?;
     let path = path_and_query.path();
 
     match route_type {
@@ -154,17 +142,17 @@ fn precheck(
         }
         RouteType::Router { .. } => {
             if ApiEndpoint::new(path).is_none() {
-                return Err(ApiError::InvalidRequest(
-                    InvalidRequestError::NotFound(path.to_string()),
-                ));
+                return Err(ApiError::InvalidRequest(InvalidRequestError::NotFound(
+                    path.to_string(),
+                )));
             }
             check_method(req.method(), path)?;
         }
         RouteType::DirectProxy { provider, .. } => {
             if !direct_allowed.contains(provider) {
-                return Err(ApiError::InvalidRequest(
-                    InvalidRequestError::NotFound(req.uri().path().to_string()),
-                ));
+                return Err(ApiError::InvalidRequest(InvalidRequestError::NotFound(
+                    req.uri().path().to_string(),
+                )));
             }
             check_method(req.method(), path)?;
         }
@@ -174,23 +162,15 @@ fn precheck(
 
 impl<S> Service<Request> for RoutingPrecheckService<S>
 where
-    S: Service<Request, Response = Response, Error = ApiError>
-        + Clone
-        + Send
-        + 'static,
+    S: Service<Request, Response = Response, Error = ApiError> + Clone + Send + 'static,
     S::Future: Send + 'static,
 {
     type Response = Response;
     type Error = ApiError;
-    type Future = futures::future::Either<
-        std::future::Ready<Result<Self::Response, Self::Error>>,
-        S::Future,
-    >;
+    type Future =
+        futures::future::Either<std::future::Ready<Result<Self::Response, Self::Error>>, S::Future>;
 
-    fn poll_ready(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
 

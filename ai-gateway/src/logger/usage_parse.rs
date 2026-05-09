@@ -37,10 +37,7 @@ pub fn usage_counts_from_response_body(body: &[u8]) -> UsageTokenCounts {
 /// and non-zero; otherwise scan `data:` SSE lines and take the **last** frame
 /// that carries a `usage` object.
 #[must_use]
-pub fn usage_counts_from_response_body_for_log(
-    is_stream: bool,
-    body: &[u8],
-) -> UsageTokenCounts {
+pub fn usage_counts_from_response_body_for_log(is_stream: bool, body: &[u8]) -> UsageTokenCounts {
     let from_single = std::str::from_utf8(body)
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(t).ok())
@@ -121,8 +118,7 @@ fn extract_usage_from_usage_object(usage: &Value) -> UsageTokenCounts {
             out.prompt_cache_write_tokens = value_as_i64(cache);
         }
         if out.prompt_cache_write_tokens == 0 {
-            out.prompt_cache_write_tokens =
-                json_i64(details, "cache_write_tokens");
+            out.prompt_cache_write_tokens = json_i64(details, "cache_write_tokens");
         }
     }
 
@@ -199,8 +195,7 @@ mod tests {
              cache_write_tokens\":5,\"cache_write_details\":{\"\
              write_5m_tokens\":5,\"write_1h_tokens\":0}}}}\n\n",
         );
-        let c =
-            usage_counts_from_response_body_for_log(false, frames.as_bytes());
+        let c = usage_counts_from_response_body_for_log(false, frames.as_bytes());
         assert_eq!(c.prompt_tokens, 3);
         assert_eq!(c.completion_tokens, 7);
         assert_eq!(c.prompt_cache_read_tokens, 2);

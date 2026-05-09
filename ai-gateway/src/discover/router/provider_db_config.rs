@@ -61,15 +61,12 @@ pub fn build_from_db(
     // Start from the embedded defaults so every known provider has a base URL.
     let embedded_defaults = ProvidersConfig::default();
 
-    let mut entries: Vec<(InferenceProvider, GlobalProviderConfig)> =
-        Vec::new();
+    let mut entries: Vec<(InferenceProvider, GlobalProviderConfig)> = Vec::new();
     let mut router_map: HashMap<RouterId, RouterConfig> = HashMap::new();
     let mut bare_model_expand = BareModelExpandIndex::default();
 
     for db_provider in db_providers {
-        let Ok(provider) =
-            InferenceProvider::from_provider_code(&db_provider.code)
-        else {
+        let Ok(provider) = InferenceProvider::from_provider_code(&db_provider.code) else {
             warn!(
                 code = %db_provider.code,
                 "provider_db_config: unknown provider code, skipping"
@@ -163,9 +160,8 @@ pub fn build_from_db(
         ));
 
         // Derived single-provider router (BalancedLatency with one provider).
-        let router_id = RouterId::Named(compact_str::CompactString::from(
-            db_provider.code.as_str(),
-        ));
+        let router_id =
+            RouterId::Named(compact_str::CompactString::from(db_provider.code.as_str()));
         let load_balance = BalanceConfig::from(HashMap::from([(
             EndpointType::Chat,
             BalanceConfigInner::BalancedLatency {
@@ -215,8 +211,7 @@ mod tests {
             },
         ];
 
-        let (providers_config, router_map, bare_expand) =
-            build_from_db(&db_providers, &db_models);
+        let (providers_config, router_map, bare_expand) = build_from_db(&db_providers, &db_models);
         let bare_gpt = bare_expand.gateway_models_for_bare_id("gpt-4o");
         assert_eq!(bare_gpt, vec!["openai/gpt-4o".to_string()]);
 
@@ -255,8 +250,7 @@ mod tests {
             is_router: false,
         }];
 
-        let (providers_config, router_map, bare_expand) =
-            build_from_db(&db_providers, &[]);
+        let (providers_config, router_map, bare_expand) = build_from_db(&db_providers, &[]);
         assert!(providers_config.is_empty());
         assert!(router_map.is_empty());
         assert_eq!(bare_expand, BareModelExpandIndex::default());
@@ -277,16 +271,13 @@ mod tests {
             model_id: "glm-5".to_string(),
         }];
 
-        let (providers_config, router_map, _bare_expand) =
-            build_from_db(&db_providers, &db_models);
+        let (providers_config, router_map, _bare_expand) = build_from_db(&db_providers, &db_models);
 
         let z_ai = InferenceProvider::Named("z-ai".into());
         let cfg = providers_config.get(&z_ai).expect("z-ai providers config");
         assert_eq!(cfg.base_url.as_str(), "https://api.z.ai/api/paas/v4/");
 
-        assert!(router_map.contains_key(&RouterId::Named(
-            compact_str::CompactString::new("z-ai")
-        )));
+        assert!(router_map.contains_key(&RouterId::Named(compact_str::CompactString::new("z-ai"))));
     }
 
     #[test]
@@ -300,8 +291,7 @@ mod tests {
             is_router: false,
         }];
 
-        let (providers_config, router_map, _bare_expand) =
-            build_from_db(&db_providers, &[]);
+        let (providers_config, router_map, _bare_expand) = build_from_db(&db_providers, &[]);
 
         let embedded_defaults = ProvidersConfig::default();
         let expected_base_url = embedded_defaults

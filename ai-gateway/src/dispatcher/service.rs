@@ -35,8 +35,7 @@ use crate::{
     },
     endpoints::ApiEndpoint,
     error::{
-        api::ApiError, init::InitError, internal::InternalError,
-        invalid_req::InvalidRequestError,
+        api::ApiError, init::InitError, internal::InternalError, invalid_req::InvalidRequestError,
     },
     logger::service::LoggerService,
     metrics::tfft::TFFTFuture,
@@ -46,15 +45,12 @@ use crate::{
         model_support::split_provider_model,
         prompt_compression,
     },
-    session_headers::{
-        SessionHeaders, parse_session_headers, remove_session_headers,
-    },
+    session_headers::{SessionHeaders, parse_session_headers, remove_session_headers},
     types::{
         body::{BodyReader, TfftTrigger},
         extensions::{
-            LargeContextDecision, MapperContext, MapperProfileContext,
-            PromptCompressionTokenPair, PromptContext,
-            PromptHeaderForRequestLog, RequestContext, RequestKind,
+            LargeContextDecision, MapperContext, MapperProfileContext, PromptCompressionTokenPair,
+            PromptContext, PromptHeaderForRequestLog, RequestContext, RequestKind,
             RequestLogEmitted, UnifiedImplicitModelFallbackContext, VkPolicy,
         },
         model_id::ModelId,
@@ -67,14 +63,11 @@ use crate::{
     virtual_key::enforce::check_model_access,
 };
 
-pub type DispatcherFuture = BoxFuture<
-    'static,
-    Result<http::Response<crate::types::body::Body>, ApiError>,
->;
+pub type DispatcherFuture =
+    BoxFuture<'static, Result<http::Response<crate::types::body::Body>, ApiError>>;
 pub type DispatcherService =
     AddExtensions<ErrorHandler<crate::middleware::mapper::Service<Dispatcher>>>;
-pub type DispatcherServiceWithoutMapper =
-    AddExtensions<ErrorHandler<Dispatcher>>;
+pub type DispatcherServiceWithoutMapper = AddExtensions<ErrorHandler<Dispatcher>>;
 
 /// Leaf service that dispatches requests to the correct provider.
 #[derive(Debug, Clone)]
@@ -142,10 +135,7 @@ impl Dispatcher {
         router_config: &Arc<RouterConfig>,
         provider: InferenceProvider,
     ) -> Result<DispatcherService, InitError> {
-        let model_mapper = ModelMapper::new_for_router(
-            app_state.clone(),
-            router_config.clone(),
-        );
+        let model_mapper = ModelMapper::new_for_router(app_state.clone(), router_config.clone());
         Self::new_inner(app_state, router_id, provider, model_mapper).await
     }
 
@@ -156,11 +146,8 @@ impl Dispatcher {
         provider: InferenceProvider,
         model_id: ModelId,
     ) -> Result<DispatcherService, InitError> {
-        let model_mapper = ModelMapper::new_with_model_id(
-            app_state.clone(),
-            router_config.clone(),
-            model_id,
-        );
+        let model_mapper =
+            ModelMapper::new_with_model_id(app_state.clone(), router_config.clone(), model_id);
         Self::new_inner(app_state, router_id, provider, model_mapper).await
     }
 
@@ -228,10 +215,7 @@ impl Service<Request> for Dispatcher {
     type Error = ApiError;
     type Future = DispatcherFuture;
 
-    fn poll_ready(
-        &mut self,
-        _cx: &mut Context<'_>,
-    ) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 
@@ -272,22 +256,16 @@ impl Dispatcher {
         let auth_ctx = req_ctx.auth_context.as_ref();
         let target_provider = &self.provider;
 
-        let provider_for_allowlist = if auth_ctx.is_some_and(|a| {
-            a.is_custom_provider && a.master_key_base_url.is_some()
-        }) {
-            InferenceProvider::Custom
-        } else {
-            target_provider.clone()
-        };
-        enforce_workspace_provider_allowlist(
-            &self.app_state,
-            auth_ctx,
-            &provider_for_allowlist,
-        )?;
+        let provider_for_allowlist =
+            if auth_ctx.is_some_and(|a| a.is_custom_provider && a.master_key_base_url.is_some()) {
+                InferenceProvider::Custom
+            } else {
+                target_provider.clone()
+            };
+        enforce_workspace_provider_allowlist(&self.app_state, auth_ctx, &provider_for_allowlist)?;
 
         let headers_for_llm_cache = req.headers().clone();
-        let session_ctx = parse_session_headers(req.headers())
-            .map_err(ApiError::InvalidRequest)?;
+        let session_ctx = parse_session_headers(req.headers()).map_err(ApiError::InvalidRequest)?;
 
         {
             sanitize_upstream_headers(req.headers_mut());
@@ -295,18 +273,14 @@ impl Dispatcher {
         let method = req.method().clone();
         let headers = req.headers().clone();
         let mut extensions_snapshot = req.extensions().clone();
-        let log_emitted_marker =
-            extensions_snapshot.get::<RequestLogEmitted>().cloned();
+        let log_emitted_marker = extensions_snapshot.get::<RequestLogEmitted>().cloned();
         let vk_policy = req.extensions().get::<VkPolicy>().cloned();
         let implicit_model_fallback_ctx = req
             .extensions()
             .get::<UnifiedImplicitModelFallbackContext>()
             .cloned();
-        let target_url = self.build_target_url(
-            &req_ctx,
-            target_provider,
-            extracted_path_and_query.as_str(),
-        )?;
+        let target_url =
+            self.build_target_url(&req_ctx, target_provider, extracted_path_and_query.as_str())?;
         // TODO: could change request type of dispatcher to
         // http::Request<reqwest::Body>
         // to avoid collecting the body twice
@@ -321,71 +295,65 @@ impl Dispatcher {
             request_kind,
             RequestKind::DirectProxy | RequestKind::CustomProvider
         ) {
-            let workspace_id =
-                auth_ctx.map(|a| a.org_id.to_string()).unwrap_or_default();
+            let workspace_id = auth_ctx.map(|a| a.org_id.to_string()).unwrap_or_default();
             let (b, pl) =
-                    crate::content_filter::prompt_cache::merge_prompt_cache_messages_into_body(
-                        self.app_state.redis(),
-                        &headers,
-                        &workspace_id,
-                        req_body_bytes,
-                        &self.app_state.0.metrics.vk,
-                    )
-                    .await?;
+                crate::content_filter::prompt_cache::merge_prompt_cache_messages_into_body(
+                    self.app_state.redis(),
+                    &headers,
+                    &workspace_id,
+                    req_body_bytes,
+                    &self.app_state.0.metrics.vk,
+                )
+                .await?;
             req_body_bytes = b;
             let prompt_log = pl;
 
-            let filter_result =
-                match crate::content_filter::evaluate::evaluate_for_vk_request(
-                    &self.app_state,
-                    &headers,
-                    &extensions_snapshot,
-                    &req_body_bytes,
-                )
-                .await
-                {
-                    Ok(r) => r,
-                    Err(ApiError::InvalidRequest(
-                        InvalidRequestError::ContentPolicyDenied {
-                            ref message,
-                        },
-                    )) => {
-                        self.emit_policy_deny_request_log(
-                            &req_ctx,
-                            start_time,
-                            start_instant,
-                            &mapper_ctx,
-                            router_id.clone(),
-                            &headers,
-                            &req_body_bytes,
-                            message,
-                            prompt_ctx.clone(),
-                            prompt_log.clone(),
-                            session_ctx.clone(),
-                            target_provider,
-                            extracted_path_and_query.as_str(),
-                            log_emitted_marker.as_ref(),
-                        );
-                        return Err(ApiError::InvalidRequest(
-                            InvalidRequestError::ContentPolicyDenied {
-                                message: message.clone(),
-                            },
-                        ));
-                    }
-                    Err(e) => return Err(e),
-                };
-            if let crate::content_filter::ContentFilterForwardBody::UseReplaced(
-                    b,
-                ) = filter_result.forward_body
-                {
-                    req_body_bytes = b;
-                }
-            if let Some(ref new_model) = filter_result.change_model {
-                let (new_body, original) =
-                    crate::content_filter::evaluate::apply_model_downgrade(
-                        req_body_bytes,
-                        new_model,
+            let filter_result = match crate::content_filter::evaluate::evaluate_for_vk_request(
+                &self.app_state,
+                &headers,
+                &extensions_snapshot,
+                &req_body_bytes,
+            )
+            .await
+            {
+                Ok(r) => r,
+                Err(ApiError::InvalidRequest(InvalidRequestError::ContentPolicyDenied {
+                    ref message,
+                })) => {
+                    self.emit_policy_deny_request_log(
+                        &req_ctx,
+                        start_time,
+                        start_instant,
+                        &mapper_ctx,
+                        router_id.clone(),
+                        &headers,
+                        &req_body_bytes,
+                        message,
+                        prompt_ctx.clone(),
+                        prompt_log.clone(),
+                        session_ctx.clone(),
+                        target_provider,
+                        extracted_path_and_query.as_str(),
+                        log_emitted_marker.as_ref(),
                     );
+                    return Err(ApiError::InvalidRequest(
+                        InvalidRequestError::ContentPolicyDenied {
+                            message: message.clone(),
+                        },
+                    ));
+                }
+                Err(e) => return Err(e),
+            };
+            if let crate::content_filter::ContentFilterForwardBody::UseReplaced(b) =
+                filter_result.forward_body
+            {
+                req_body_bytes = b;
+            }
+            if let Some(ref new_model) = filter_result.change_model {
+                let (new_body, original) = crate::content_filter::evaluate::apply_model_downgrade(
+                    req_body_bytes,
+                    new_model,
+                );
                 req_body_bytes = new_body;
                 let original_model = original.unwrap_or_default();
                 tracing::info!(
@@ -393,12 +361,10 @@ impl Dispatcher {
                     downgraded_model = %new_model,
                     "content_filter: policy model downgrade applied (direct proxy)"
                 );
-                extensions_snapshot.insert(
-                    crate::content_filter::PolicyModelOverride {
-                        original_model,
-                        downgraded_model: new_model.clone(),
-                    },
-                );
+                extensions_snapshot.insert(crate::content_filter::PolicyModelOverride {
+                    original_model,
+                    downgraded_model: new_model.clone(),
+                });
             }
 
             if extracted_path_and_query
@@ -412,9 +378,7 @@ impl Dispatcher {
                     req_body_bytes,
                     target_provider,
                 )?;
-                if let Some(pair) =
-                    fake_parts.extensions.remove::<PromptCompressionTokenPair>()
-                {
+                if let Some(pair) = fake_parts.extensions.remove::<PromptCompressionTokenPair>() {
                     prompt_compression_tokens = Some(pair);
                 }
             }
@@ -444,9 +408,7 @@ impl Dispatcher {
         )?;
 
         let llm_cache_settings =
-            match alephant_llm_kv_cache::CacheSettings::parse(
-                &headers_for_llm_cache,
-            ) {
+            match alephant_llm_kv_cache::CacheSettings::parse(&headers_for_llm_cache) {
                 Err(msg) => {
                     tracing::error!(%msg, "llm kv: invalid Alephant-Cache-* headers");
                     return Err(ApiError::Internal(InternalError::Internal));
@@ -458,24 +420,20 @@ impl Dispatcher {
             && auth_ctx.is_some()
             && req_ctx.llm_kv_cache_read_allowed;
 
-        let cache_read_keys =
-            if llm_kv_read_ok || llm_cache_settings.should_write {
-                Some(llm_kv_slot_keys(
-                    &llm_cache_settings,
-                    &target_url,
-                    &req_body_bytes,
-                ))
-            } else {
-                None
-            };
+        let cache_read_keys = if llm_kv_read_ok || llm_cache_settings.should_write {
+            Some(llm_kv_slot_keys(
+                &llm_cache_settings,
+                &target_url,
+                &req_body_bytes,
+            ))
+        } else {
+            None
+        };
 
         if llm_kv_read_ok
             && let Some(ref keys) = cache_read_keys
-            && let Some((entry, bidx)) = alephant_llm_kv_cache::read_bucket(
-                self.app_state.llm_kv().as_ref(),
-                keys,
-            )
-            .await
+            && let Some((entry, bidx)) =
+                alephant_llm_kv_cache::read_bucket(self.app_state.llm_kv().as_ref(), keys).await
         {
             let (mut hit_resp, body_reader, tfft_rx) =
                 build_llm_cache_hit_response(&entry, bidx, &mapper_ctx)?;
@@ -576,17 +534,10 @@ impl Dispatcher {
                         let entry = alephant_llm_kv_cache::LlmCacheEntry {
                             headers: std::collections::HashMap::new(),
                             latency: 0,
-                            body: vec![
-                                String::from_utf8_lossy(&hit.response_bytes)
-                                    .to_string(),
-                            ],
+                            body: vec![String::from_utf8_lossy(&hit.response_bytes).to_string()],
                         };
                         let (mut hit_resp, body_reader, tfft_rx) =
-                            build_llm_cache_hit_response(
-                                &entry,
-                                0,
-                                &mapper_ctx,
-                            )?;
+                            build_llm_cache_hit_response(&entry, 0, &mapper_ctx)?;
                         let response_received_at = Utc::now();
                         tracing::info!(
                             method = %method,
@@ -601,12 +552,8 @@ impl Dispatcher {
                             let h = hit_resp.headers_mut();
                             h.insert(
                                 "alephant-id",
-                                HeaderValue::from_str(
-                                    &response_log_id.to_string(),
-                                )
-                                .expect(
-                                    "a uuid is always a valid header value",
-                                ),
+                                HeaderValue::from_str(&response_log_id.to_string())
+                                    .expect("a uuid is always a valid header value"),
                             );
                             h.remove(http::header::CONTENT_LENGTH);
                             h.remove("x-request-id")
@@ -617,12 +564,9 @@ impl Dispatcher {
                             .auth_context(auth_ctx.cloned())
                             .provider_request_id(provider_request_id)
                             .mapper_ctx(mapper_ctx.clone())
-                            .mapper_profile_context(
-                                mapper_profile_context.clone(),
-                            )
+                            .mapper_profile_context(mapper_profile_context.clone())
                             .build();
-                        extensions_copier
-                            .copy_extensions(hit_resp.extensions_mut());
+                        extensions_copier.copy_extensions(hit_resp.extensions_mut());
                         hit_resp.extensions_mut().insert(mapper_ctx.clone());
                         if let Some(ref ep) = api_endpoint {
                             hit_resp.extensions_mut().insert(ep.clone());
@@ -669,13 +613,12 @@ impl Dispatcher {
             && auth_ctx.is_some()
             && req_ctx.llm_kv_cache_write_allowed;
         let semantic_write_enabled = self.app_state.semantic_cache().is_some();
-        let (cache_tap_tx, cache_save_rx) =
-            if llm_kv_write_enabled || semantic_write_enabled {
-                let (tx, rx) = mpsc::unbounded_channel();
-                (Some(tx), Some(rx))
-            } else {
-                (None, None)
-            };
+        let (cache_tap_tx, cache_save_rx) = if llm_kv_write_enabled || semantic_write_enabled {
+            let (tx, rx) = mpsc::unbounded_channel();
+            (Some(tx), Some(rx))
+        } else {
+            (None, None)
+        };
 
         let request_builder = self
             .client
@@ -796,14 +739,10 @@ impl Dispatcher {
             let llm_kv_keys = cache_write_keys;
             let semantic_cache = self.app_state.semantic_cache().cloned();
             let semantic_prepared_for_write = semantic_prepared.clone();
-            let semantic_write_context_for_write =
-                semantic_write_context.clone();
+            let semantic_write_context_for_write = semantic_write_context.clone();
             let semantic_path = extracted_path_and_query.to_string();
             let semantic_headers = headers_for_llm_cache.clone();
-            let semantic_body = semantic_write_body_bytes(
-                &req_body_bytes,
-                &effective_request_body,
-            );
+            let semantic_body = semantic_write_body_bytes(&req_body_bytes, &effective_request_body);
             tokio::spawn(async move {
                 if !status.is_success() {
                     return;
@@ -819,35 +758,27 @@ impl Dispatcher {
                         let mut headers_json = HashMap::new();
                         for (name, val) in &resp_hdrs {
                             if let Ok(vs) = val.to_str() {
-                                headers_json
-                                    .insert(name.to_string(), vs.to_string());
+                                headers_json.insert(name.to_string(), vs.to_string());
                             }
                         }
                         let entry = alephant_llm_kv_cache::LlmCacheEntry {
                             headers: headers_json,
-                            latency: u64::try_from(start.elapsed().as_millis())
-                                .unwrap_or(u64::MAX),
+                            latency: u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX),
                             body: body_chunks,
                         };
-                        let _ =
-                            alephant_llm_kv_cache::try_save_to_first_free_slot(
-                                backend.as_ref(),
-                                &keys,
-                                &entry,
-                                ttl,
-                            )
-                            .await;
+                        let _ = alephant_llm_kv_cache::try_save_to_first_free_slot(
+                            backend.as_ref(),
+                            &keys,
+                            &entry,
+                            ttl,
+                        )
+                        .await;
                     }
                 }
                 if let Some(svc) = semantic_cache {
-                    let store_result = if let Some(write) =
-                        semantic_write_context_for_write
-                    {
-                        svc.store_response_with_context(write, &body_bytes)
-                            .await
-                    } else if let Some(prepared) =
-                        semantic_prepared_for_write.as_ref()
-                    {
+                    let store_result = if let Some(write) = semantic_write_context_for_write {
+                        svc.store_response_with_context(write, &body_bytes).await
+                    } else if let Some(prepared) = semantic_prepared_for_write.as_ref() {
                         svc.store_response_prepared(prepared, &body_bytes).await
                     } else {
                         svc.store_response(
@@ -977,28 +908,25 @@ impl Dispatcher {
             .remove::<Arc<RequestContext>>()
             .ok_or(InternalError::ExtensionNotFound("RequestContext"))?;
         let api_endpoint = req.extensions().get::<ApiEndpoint>().cloned();
-        let extracted_path_and_query = req
-            .extensions_mut()
-            .remove::<PathAndQuery>()
-            .ok_or(ApiError::Internal(InternalError::ExtensionNotFound(
-                "PathAndQuery",
-            )))?;
+        let extracted_path_and_query =
+            req.extensions_mut()
+                .remove::<PathAndQuery>()
+                .ok_or(ApiError::Internal(InternalError::ExtensionNotFound(
+                    "PathAndQuery",
+                )))?;
         let inference_provider = req
             .extensions()
             .get::<InferenceProvider>()
             .cloned()
             .ok_or(InternalError::ExtensionNotFound("InferenceProvider"))?;
         let router_id = req.extensions().get::<RouterId>().cloned();
-        let mapper_profile_context =
-            req.extensions_mut().remove::<MapperProfileContext>();
+        let mapper_profile_context = req.extensions_mut().remove::<MapperProfileContext>();
         let start_instant = req
             .extensions()
             .get::<Instant>()
             .copied()
             .unwrap_or_else(|| {
-                tracing::warn!(
-                    "did not find expected Instant in req extensions"
-                );
+                tracing::warn!("did not find expected Instant in req extensions");
                 Instant::now()
             });
         let start_time = req
@@ -1006,9 +934,7 @@ impl Dispatcher {
             .get::<DateTime<Utc>>()
             .copied()
             .unwrap_or_else(|| {
-                tracing::warn!(
-                    "did not find expected DateTime<Utc> in req extensions"
-                );
+                tracing::warn!("did not find expected DateTime<Utc> in req extensions");
                 Utc::now()
             });
         let request_kind = req
@@ -1017,12 +943,9 @@ impl Dispatcher {
             .copied()
             .ok_or(InternalError::ExtensionNotFound("RequestKind"))?;
         let prompt_ctx = req.extensions_mut().remove::<PromptContext>();
-        let prompt_header_from_mapper =
-            req.extensions_mut().remove::<PromptHeaderForRequestLog>();
-        let large_context_decision =
-            req.extensions_mut().remove::<LargeContextDecision>();
-        let prompt_compression_tokens =
-            req.extensions_mut().remove::<PromptCompressionTokenPair>();
+        let prompt_header_from_mapper = req.extensions_mut().remove::<PromptHeaderForRequestLog>();
+        let large_context_decision = req.extensions_mut().remove::<LargeContextDecision>();
+        let prompt_compression_tokens = req.extensions_mut().remove::<PromptCompressionTokenPair>();
 
         Ok((
             mapper_ctx,
@@ -1072,10 +995,7 @@ impl Dispatcher {
 
             if let Some(rate_limit_tx) = &self.rate_limit_tx
                 && let Err(e) = rate_limit_tx
-                    .send(RateLimitEvent::new(
-                        api_endpoint.clone(),
-                        retry_after,
-                    ))
+                    .send(RateLimitEvent::new(api_endpoint.clone(), retry_after))
                     .await
             {
                 tracing::error!(error = %e, "failed to send rate limit event");
@@ -1117,8 +1037,7 @@ impl Dispatcher {
         effective_provider: &InferenceProvider,
         log_emitted: Option<&RequestLogEmitted>,
     ) {
-        let deployment_target =
-            self.app_state.config().deployment_target.clone();
+        let deployment_target = self.app_state.config().deployment_target.clone();
         if self.app_state.config().alephant.is_observability_enabled() {
             if let Some(auth_ctx) = req_ctx.auth_context.clone() {
                 let cache_enabled_for_log = if llm_kv_cache_read_enabled {
@@ -1145,9 +1064,7 @@ impl Dispatcher {
                     .response_id(response_log_id)
                     .response_created_at(response_received_at)
                     .prompt_ctx(prompt_ctx)
-                    .prompt_header_for_request_log(
-                        prompt_header_for_request_log,
-                    )
+                    .prompt_header_for_request_log(prompt_header_for_request_log)
                     .large_context_decision(large_context_decision)
                     .prompt_compression_tokens(prompt_compression_tokens)
                     .session_ctx(session_ctx)
@@ -1180,41 +1097,44 @@ impl Dispatcher {
                 marker.mark();
             }
             let app_state = self.app_state.clone();
-            let model = mapper_ctx.model.as_ref().map_or_else(
-                || "unknown".to_string(),
-                std::string::ToString::to_string,
-            );
+            let model = mapper_ctx
+                .model
+                .as_ref()
+                .map_or_else(|| "unknown".to_string(), std::string::ToString::to_string);
             let forward_url = target_url.to_string();
             let path = target_url.path().to_string();
             let provider_string = effective_provider.to_string();
             tokio::spawn(
-                    async move {
-                        let tfft_future = TFFTFuture::new(start_instant, tfft_rx);
-                        let collect_future = response_body_for_logger.collect();
-                        let (collected, tfft_duration) =
-                            tokio::join!(collect_future, tfft_future);
-                        let response_body = collected
-                            .expect("infallible never errors")
-                            .to_bytes();
-                        tracing::info!("dispatcher response target_url: {forward_url}");
-                        tracing::info!(
-                            "dispatcher response body ({} bytes): {}",
-                            response_body.len(),
-                            String::from_utf8_lossy(&response_body)
-                        );
-                        if let Ok(tfft_duration) = tfft_duration {
-                            tracing::trace!(tfft_duration = ?tfft_duration, "tfft_duration");
-                            let attributes = [
-                                KeyValue::new("provider", provider_string),
-                                KeyValue::new("model", model),
-                                KeyValue::new("path", path),
-                            ];
-                            #[allow(clippy::cast_precision_loss)]
-                            app_state.0.metrics.tfft_duration.record(tfft_duration.as_millis() as f64, &attributes);
-                        } else { tracing::error!("Failed to get TFFT signal") }
+                async move {
+                    let tfft_future = TFFTFuture::new(start_instant, tfft_rx);
+                    let collect_future = response_body_for_logger.collect();
+                    let (collected, tfft_duration) = tokio::join!(collect_future, tfft_future);
+                    let response_body = collected.expect("infallible never errors").to_bytes();
+                    tracing::info!("dispatcher response target_url: {forward_url}");
+                    tracing::info!(
+                        "dispatcher response body ({} bytes): {}",
+                        response_body.len(),
+                        String::from_utf8_lossy(&response_body)
+                    );
+                    if let Ok(tfft_duration) = tfft_duration {
+                        tracing::trace!(tfft_duration = ?tfft_duration, "tfft_duration");
+                        let attributes = [
+                            KeyValue::new("provider", provider_string),
+                            KeyValue::new("model", model),
+                            KeyValue::new("path", path),
+                        ];
+                        #[allow(clippy::cast_precision_loss)]
+                        app_state
+                            .0
+                            .metrics
+                            .tfft_duration
+                            .record(tfft_duration.as_millis() as f64, &attributes);
+                    } else {
+                        tracing::error!("Failed to get TFFT signal")
                     }
-                    .instrument(tracing::Span::current()),
-                );
+                }
+                .instrument(tracing::Span::current()),
+            );
         }
     }
 
@@ -1236,8 +1156,7 @@ impl Dispatcher {
         extracted_path_and_query: &str,
         log_emitted: Option<&RequestLogEmitted>,
     ) {
-        let deployment_target =
-            self.app_state.config().deployment_target.clone();
+        let deployment_target = self.app_state.config().deployment_target.clone();
         if !self.app_state.config().alephant.is_observability_enabled() {
             return;
         }
@@ -1245,25 +1164,20 @@ impl Dispatcher {
             return;
         };
 
-        let target_url = match self.build_target_url(
-            req_ctx,
-            target_provider,
-            extracted_path_and_query,
-        ) {
-            Ok(u) => u,
-            Err(e) => {
-                tracing::warn!(
-                    error = %e,
-                    "policy deny log: failed to build target_url, skipping"
-                );
-                return;
-            }
-        };
+        let target_url =
+            match self.build_target_url(req_ctx, target_provider, extracted_path_and_query) {
+                Ok(u) => u,
+                Err(e) => {
+                    tracing::warn!(
+                        error = %e,
+                        "policy deny log: failed to build target_url, skipping"
+                    );
+                    return;
+                }
+            };
 
         let response_body_bytes =
-            crate::content_filter::evaluate::policy_denied_error_response_json(
-                deny_message,
-            );
+            crate::content_filter::evaluate::policy_denied_error_response_json(deny_message);
 
         let response_status = http::StatusCode::OK;
         let request_log_id = request_log_id_from_headers(headers);
@@ -1335,19 +1249,16 @@ impl Dispatcher {
         extracted_path_and_query: &str,
     ) -> Result<url::Url, ApiError> {
         // Priority 1: master_keys.base_url (Cloud, per-key override).
-        if let Some(master_url) = resolve_master_key_target_url(
-            req_ctx.auth_context.as_ref(),
-            extracted_path_and_query,
-        ) {
+        if let Some(master_url) =
+            resolve_master_key_target_url(req_ctx.auth_context.as_ref(), extracted_path_and_query)
+        {
             return Ok(master_url);
         }
 
         // Priority 2: router-level provider config.
         if let Some(router_config) = req_ctx.router_config.as_ref()
-            && let Some(router_provider_config) =
-                router_config.providers.as_ref()
-            && let Some(provider_config) =
-                router_provider_config.get(target_provider)
+            && let Some(router_provider_config) = router_config.providers.as_ref()
+            && let Some(provider_config) = router_provider_config.get(target_provider)
         {
             return Ok(join_provider_upstream_url(
                 &provider_config.base_url,
@@ -1357,10 +1268,9 @@ impl Dispatcher {
 
         // Priority 3: global provider config (hot-updatable in Cloud mode).
         let providers_config = self.app_state.get_providers_config();
-        let selected_provider_config =
-            providers_config.get(target_provider).ok_or_else(|| {
-                InternalError::ProviderNotConfigured(target_provider.clone())
-            })?;
+        let selected_provider_config = providers_config
+            .get(target_provider)
+            .ok_or_else(|| InternalError::ProviderNotConfigured(target_provider.clone()))?;
         Ok(join_provider_upstream_url(
             &selected_provider_config.base_url,
             extracted_path_and_query,
@@ -1386,9 +1296,7 @@ impl Dispatcher {
         let request_builder = request_builder.try_clone().ok_or_else(|| {
             // in theory, this should never happen, as we'll have already
             // collected the request body
-            tracing::error!(
-                "failed to clone request builder, cannot dispatch stream"
-            );
+            tracing::error!("failed to clone request builder, cannot dispatch stream");
             ApiError::Internal(InternalError::Internal)
         })?;
         let response_stream = Client::sse_stream(
@@ -1430,9 +1338,7 @@ impl Dispatcher {
         let request_builder = request_builder.try_clone().ok_or_else(|| {
             // in theory, this should never happen, as we'll have already
             // collected the request body
-            tracing::error!(
-                "failed to clone request builder, cannot dispatch stream"
-            );
+            tracing::error!("failed to clone request builder, cannot dispatch stream");
             ApiError::Internal(InternalError::Internal)
         })?;
         let response: reqwest::Response = request_builder
@@ -1448,20 +1354,12 @@ impl Dispatcher {
         // this is compiled out in release builds
         #[cfg(debug_assertions)]
         if status.is_server_error() || status.is_client_error() {
-            let body =
-                response.text().await.map_err(InternalError::ReqwestError)?;
+            let body = response.text().await.map_err(InternalError::ReqwestError)?;
             tracing::debug!(status_code = %status, error_resp = %body, "received error response");
             let bytes = bytes::Bytes::from(body);
-            let stream = futures::stream::once(futures::future::ok::<
-                _,
-                ApiError,
-            >(bytes));
-            let (error_body, error_reader, tfft_rx) = BodyReader::wrap_stream(
-                stream,
-                false,
-                TfftTrigger::Never,
-                cache_tap.clone(),
-            );
+            let stream = futures::stream::once(futures::future::ok::<_, ApiError>(bytes));
+            let (error_body, error_reader, tfft_rx) =
+                BodyReader::wrap_stream(stream, false, TfftTrigger::Never, cache_tap.clone());
             let response = resp_builder
                 .body(error_body)
                 .map_err(InternalError::HttpError)?;
@@ -1496,23 +1394,17 @@ impl Dispatcher {
         target_url: url::Url,
         extracted_path_and_query: &str,
         vk_policy: Option<&VkPolicy>,
-        implicit_model_fallback_ctx: Option<
-            &UnifiedImplicitModelFallbackContext,
-        >,
+        implicit_model_fallback_ctx: Option<&UnifiedImplicitModelFallbackContext>,
     ) -> Result<SyncDispatchOutcome, ApiError> {
-        let retry_config =
-            get_retry_config(&self.app_state, request_kind, req_ctx);
-        let fallback_policy_for_log =
-            self.app_state.config().fallback_policy.clone();
+        let retry_config = get_retry_config(&self.app_state, request_kind, req_ctx);
+        let fallback_policy_for_log = self.app_state.config().fallback_policy.clone();
         let provider_for_log = self.provider.clone();
         let fallback_cache_tap = cache_tap.clone();
-        let retry_exhausted_before_fallback =
-            retry_config.as_ref().is_some_and(|config| {
-                retry_config_allows_retry_attempts(config.as_ref())
-            });
-        let result: Result<SyncDispatchResponse, ApiError> = if let Some(
-            retry_config,
-        ) = retry_config
+        let retry_exhausted_before_fallback = retry_config
+            .as_ref()
+            .is_some_and(|config| retry_config_allows_retry_attempts(config.as_ref()));
+        let result: Result<SyncDispatchResponse, ApiError> = if let Some(retry_config) =
+            retry_config
         {
             match retry_config.as_ref() {
                 RetryConfig::Exponential {
@@ -1525,9 +1417,11 @@ impl Dispatcher {
                         .with_max_delay(*max_delay)
                         .with_min_delay(*min_delay)
                         .with_max_times(usize::from(*max_retries))
-                        .with_factor(factor.to_f32().unwrap_or(
-                            crate::config::retry::DEFAULT_RETRY_FACTOR,
-                        ))
+                        .with_factor(
+                            factor
+                                .to_f32()
+                                .unwrap_or(crate::config::retry::DEFAULT_RETRY_FACTOR),
+                        )
                         .with_jitter()
                         .build();
                     let future_fn = || async {
@@ -1541,21 +1435,21 @@ impl Dispatcher {
                         Ok(result)
                     };
 
-                    crate::utils::retry::RetryWithResult::new(
-                        future_fn,
-                        retry_strategy,
-                    )
-                    .when(|result: &Result<_, _>| match result {
-                        Ok(response) => response.0.status().is_server_error(),
-                        Err(e) => match e {
-                            ApiError::Internal(InternalError::ReqwestError(
-                                reqwest_error,
-                            )) => reqwest_error.is_connect() || reqwest_error.status().is_some_and(|s| s.is_server_error()),
-                            _ => false,
-                        },
-                    })
-                    .notify(|result: &Result<_, _>, dur: Duration| match result {
-                        Ok(result) if result.0.status().is_server_error() => {
+                    crate::utils::retry::RetryWithResult::new(future_fn, retry_strategy)
+                        .when(|result: &Result<_, _>| match result {
+                            Ok(response) => response.0.status().is_server_error(),
+                            Err(e) => match e {
+                                ApiError::Internal(InternalError::ReqwestError(reqwest_error)) => {
+                                    reqwest_error.is_connect()
+                                        || reqwest_error
+                                            .status()
+                                            .is_some_and(|s| s.is_server_error())
+                                }
+                                _ => false,
+                            },
+                        })
+                        .notify(|result: &Result<_, _>, dur: Duration| match result {
+                            Ok(result) if result.0.status().is_server_error() => {
                                 tracing::warn!(
                                     error = %result.0.status(),
                                     retry_in = ?dur,
@@ -1567,10 +1461,13 @@ impl Dispatcher {
                                     None,
                                     &provider_for_log,
                                 );
-                        }
-                        Err(ApiError::Internal(InternalError::ReqwestError(
-                            reqwest_error,
-                        ))) if reqwest_error.is_connect() || reqwest_error.status().is_some_and(|s| s.is_server_error()) => {
+                            }
+                            Err(ApiError::Internal(InternalError::ReqwestError(reqwest_error)))
+                                if reqwest_error.is_connect()
+                                    || reqwest_error
+                                        .status()
+                                        .is_some_and(|s| s.is_server_error()) =>
+                            {
                                 tracing::warn!(
                                     error = %reqwest_error,
                                     retry_in = ?dur,
@@ -1583,9 +1480,9 @@ impl Dispatcher {
                                     &provider_for_log,
                                 );
                             }
-                        _ => {}
-                    })
-                    .await
+                            _ => {}
+                        })
+                        .await
                 }
                 RetryConfig::Constant { delay, max_retries } => {
                     let retry_strategy = ConstantBuilder::default()
@@ -1603,17 +1500,20 @@ impl Dispatcher {
                     };
 
                     crate::utils::retry::RetryWithResult::new(future_fn, retry_strategy)
-                    .when(|result: &Result<_, _>| match result {
-                        Ok(response) => response.0.status().is_server_error(),
-                        Err(e) => match e {
-                            ApiError::Internal(InternalError::ReqwestError(
-                                reqwest_error,
-                            )) => reqwest_error.is_connect() || reqwest_error.status().is_some_and(|s| s.is_server_error()),
-                            _ => false,
-                        },
-                    })
-                    .notify(|result: &Result<_, _>, dur: Duration| match result {
-                        Ok(result) if result.0.status().is_server_error() => {
+                        .when(|result: &Result<_, _>| match result {
+                            Ok(response) => response.0.status().is_server_error(),
+                            Err(e) => match e {
+                                ApiError::Internal(InternalError::ReqwestError(reqwest_error)) => {
+                                    reqwest_error.is_connect()
+                                        || reqwest_error
+                                            .status()
+                                            .is_some_and(|s| s.is_server_error())
+                                }
+                                _ => false,
+                            },
+                        })
+                        .notify(|result: &Result<_, _>, dur: Duration| match result {
+                            Ok(result) if result.0.status().is_server_error() => {
                                 tracing::warn!(
                                     error = %result.0.status(),
                                     retry_in = ?dur,
@@ -1625,10 +1525,13 @@ impl Dispatcher {
                                     None,
                                     &provider_for_log,
                                 );
-                        }
-                        Err(ApiError::Internal(InternalError::ReqwestError(
-                            reqwest_error,
-                        ))) if reqwest_error.is_connect() || reqwest_error.status().is_some_and(|s| s.is_server_error()) => {
+                            }
+                            Err(ApiError::Internal(InternalError::ReqwestError(reqwest_error)))
+                                if reqwest_error.is_connect()
+                                    || reqwest_error
+                                        .status()
+                                        .is_some_and(|s| s.is_server_error()) =>
+                            {
                                 tracing::warn!(
                                     error = %reqwest_error,
                                     retry_in = ?dur,
@@ -1641,18 +1544,13 @@ impl Dispatcher {
                                     &provider_for_log,
                                 );
                             }
-                        _ => {}
-                    })
-                    .await
+                            _ => {}
+                        })
+                        .await
                 }
             }
         } else {
-            Self::dispatch_sync(
-                &request_builder,
-                req_body_bytes.clone(),
-                cache_tap,
-            )
-            .await
+            Self::dispatch_sync(&request_builder, req_body_bytes.clone(), cache_tap).await
         };
 
         if should_attempt_cross_provider_default_model_fallback(
@@ -1725,9 +1623,7 @@ impl Dispatcher {
         headers: &HeaderMap,
         extracted_path_and_query: &str,
         vk_policy: Option<&VkPolicy>,
-        implicit_model_fallback_ctx: Option<
-            &UnifiedImplicitModelFallbackContext,
-        >,
+        implicit_model_fallback_ctx: Option<&UnifiedImplicitModelFallbackContext>,
         req_body_bytes: &Bytes,
         cache_tap: Option<mpsc::UnboundedSender<Bytes>>,
     ) -> Result<
@@ -1750,27 +1646,24 @@ impl Dispatcher {
         let Some(implicit_ctx) = implicit_model_fallback_ctx else {
             return Ok(None);
         };
-        let Ok(parsed_current) =
-            split_provider_model(&implicit_ctx.selected_model)
-        else {
+        let Ok(parsed_current) = split_provider_model(&implicit_ctx.selected_model) else {
             return Ok(None);
         };
-        let fallback_model =
-            match choose_default_gateway_model_excluding_provider(
-                &self.app_state,
-                "chat/completions",
-                auth_ctx,
-                vk_policy,
-                Some(parsed_current.provider_raw),
-            )
-            .await
-            {
-                Ok(model) => model,
-                Err(ApiError::InvalidRequest(
-                    InvalidRequestError::NoModelAvailable,
-                )) => return Ok(None),
-                Err(err) => return Err(err),
-            };
+        let fallback_model = match choose_default_gateway_model_excluding_provider(
+            &self.app_state,
+            "chat/completions",
+            auth_ctx,
+            vk_policy,
+            Some(parsed_current.provider_raw),
+        )
+        .await
+        {
+            Ok(model) => model,
+            Err(ApiError::InvalidRequest(InvalidRequestError::NoModelAvailable)) => {
+                return Ok(None);
+            }
+            Err(err) => return Err(err),
+        };
         if fallback_model.eq_ignore_ascii_case(&implicit_ctx.selected_model) {
             return Ok(None);
         }
@@ -1786,17 +1679,16 @@ impl Dispatcher {
                 req_body_bytes,
                 &fallback_model,
             )?;
-        let fallback_client =
-            Client::new(&self.app_state, fallback_provider.clone())
-                .await
-                .map_err(|err| {
-                    tracing::error!(
-                        error = %err,
-                        provider = %fallback_provider,
-                        "failed to build fallback client"
-                    );
-                    ApiError::Internal(InternalError::Internal)
-                })?;
+        let fallback_client = Client::new(&self.app_state, fallback_provider.clone())
+            .await
+            .map_err(|err| {
+                tracing::error!(
+                    error = %err,
+                    provider = %fallback_provider,
+                    "failed to build fallback client"
+                );
+                ApiError::Internal(InternalError::Internal)
+            })?;
         let fallback_request_builder = fallback_client
             .as_ref()
             .request(method.clone(), fallback_target_url.clone())
@@ -1817,12 +1709,8 @@ impl Dispatcher {
             &fallback_provider,
         );
         let (response, response_body_for_logger, tfft_rx) =
-            Self::dispatch_sync(
-                &fallback_request_builder,
-                fallback_body.clone(),
-                cache_tap,
-            )
-            .await?;
+            Self::dispatch_sync(&fallback_request_builder, fallback_body.clone(), cache_tap)
+                .await?;
         Ok(Some((
             response,
             response_body_for_logger,
@@ -1840,22 +1728,15 @@ impl Dispatcher {
         req_body_bytes: &Bytes,
         fallback_model: &str,
     ) -> Result<(InferenceProvider, url::Url, Bytes), ApiError> {
-        let fallback_provider =
-            inference_provider_from_gateway_model(fallback_model)?;
-        let fallback_target_url = self.build_target_url(
-            req_ctx,
-            &fallback_provider,
-            extracted_path_and_query,
-        )?;
-        let fallback_body =
-            rewrite_chat_completion_model(req_body_bytes, fallback_model)?;
+        let fallback_provider = inference_provider_from_gateway_model(fallback_model)?;
+        let fallback_target_url =
+            self.build_target_url(req_ctx, &fallback_provider, extracted_path_and_query)?;
+        let fallback_body = rewrite_chat_completion_model(req_body_bytes, fallback_model)?;
         Ok((fallback_provider, fallback_target_url, fallback_body))
     }
 }
 
-fn sync_dispatch_result_is_retryable(
-    result: &Result<SyncDispatchResponse, ApiError>,
-) -> bool {
+fn sync_dispatch_result_is_retryable(result: &Result<SyncDispatchResponse, ApiError>) -> bool {
     match result {
         Ok(response) => response.0.status().is_server_error(),
         Err(ApiError::Internal(InternalError::ReqwestError(reqwest_error))) => {
@@ -1896,33 +1777,25 @@ fn unified_chat_completions_path(extracted_path_and_query: &str) -> bool {
         .is_some_and(|path| path.ends_with("chat/completions"))
 }
 
-fn rewrite_chat_completion_model(
-    body: &Bytes,
-    new_model: &str,
-) -> Result<Bytes, ApiError> {
-    let mut value: serde_json::Value = serde_json::from_slice(body)
-        .map_err(InvalidRequestError::InvalidRequestBody)?;
+fn rewrite_chat_completion_model(body: &Bytes, new_model: &str) -> Result<Bytes, ApiError> {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(body).map_err(InvalidRequestError::InvalidRequestBody)?;
     value["model"] = serde_json::Value::String(new_model.to_string());
     serde_json::to_vec(&value)
         .map(Bytes::from)
         .map_err(|err| InvalidRequestError::InvalidRequestBody(err).into())
 }
 
-fn inference_provider_from_gateway_model(
-    model: &str,
-) -> Result<InferenceProvider, ApiError> {
-    let source_model =
-        ModelId::from_str(model).map_err(InternalError::MapperError)?;
+fn inference_provider_from_gateway_model(model: &str) -> Result<InferenceProvider, ApiError> {
+    let source_model = ModelId::from_str(model).map_err(InternalError::MapperError)?;
     match source_model {
         ModelId::ModelIdWithVersion { provider, .. } => Ok(provider),
         ModelId::Bedrock(_) => Ok(InferenceProvider::Bedrock),
         ModelId::Ollama(_) => Ok(InferenceProvider::Ollama),
-        ModelId::Unknown(_) => {
-            Err(InvalidRequestError::UnsupportedEndpoint(format!(
-                "provider for the given model: '{source_model}' not supported"
-            ))
-            .into())
-        }
+        ModelId::Unknown(_) => Err(InvalidRequestError::UnsupportedEndpoint(format!(
+            "provider for the given model: '{source_model}' not supported"
+        ))
+        .into()),
     }
 }
 
@@ -1978,26 +1851,20 @@ fn build_llm_cache_hit_response(
     let hm = resp_builder.headers_mut().unwrap();
     let hdrs: HashMap<String, String> = entry.headers.clone();
     alephant_llm_kv_cache::merge_cached_headers(hm, &hdrs);
-    alephant_llm_kv_cache::apply_alephant_cache_hit_headers(
-        hm,
-        bucket_idx,
-        entry.latency,
-    );
+    alephant_llm_kv_cache::apply_alephant_cache_hit_headers(hm, bucket_idx, entry.latency);
     let chunks: Vec<Bytes> = entry
         .body
         .iter()
         .map(|s| Bytes::copy_from_slice(s.as_bytes()))
         .collect();
-    let stream =
-        futures::stream::iter(chunks.into_iter().map(Ok::<_, ApiError>));
+    let stream = futures::stream::iter(chunks.into_iter().map(Ok::<_, ApiError>));
     let append_nl = mapper_ctx.is_stream;
     let tfft = if mapper_ctx.is_stream {
         TfftTrigger::FirstModelToken
     } else {
         TfftTrigger::Never
     };
-    let (body, reader, tfft_rx) =
-        BodyReader::wrap_stream(stream, append_nl, tfft, None);
+    let (body, reader, tfft_rx) = BodyReader::wrap_stream(stream, append_nl, tfft, None);
     let response = resp_builder.body(body).map_err(InternalError::HttpError)?;
     Ok((response, reader, tfft_rx))
 }
@@ -2018,9 +1885,7 @@ fn enforce_direct_proxy_vk_model_policy(
     {
         return Ok(());
     }
-    if auth_ctx.is_some_and(|a| {
-        a.is_custom_provider && a.master_key_base_url.is_some()
-    }) {
+    if auth_ctx.is_some_and(|a| a.is_custom_provider && a.master_key_base_url.is_some()) {
         return Ok(());
     }
     if !matches!(
@@ -2040,12 +1905,9 @@ fn enforce_direct_proxy_vk_model_policy(
         return Ok(());
     }
 
-    let req = serde_json::from_slice::<
-        async_openai::types::CreateChatCompletionRequest,
-    >(req_body_bytes)
-    .map_err(
-        crate::error::invalid_req::InvalidRequestError::InvalidRequestBody,
-    )?;
+    let req =
+        serde_json::from_slice::<async_openai::types::CreateChatCompletionRequest>(req_body_bytes)
+            .map_err(crate::error::invalid_req::InvalidRequestError::InvalidRequestBody)?;
 
     let mut ext = http::Extensions::new();
     if let Some(policy) = vk_policy.cloned() {
@@ -2070,15 +1932,12 @@ fn enforce_workspace_provider_allowlist(
     auth_ctx: Option<&crate::types::extensions::AuthContext>,
     target_provider: &InferenceProvider,
 ) -> Result<(), ApiError> {
-    let Some(workspace_id) = allowlist_workspace_id_for_request(auth_ctx)
-    else {
+    let Some(workspace_id) = allowlist_workspace_id_for_request(auth_ctx) else {
         return Ok(());
     };
 
     // F-10: enforce workspace provider allowlist in Cloud mode.
-    if !app_state
-        .is_provider_allowed_for_workspace(workspace_id, target_provider)
-    {
+    if !app_state.is_provider_allowed_for_workspace(workspace_id, target_provider) {
         tracing::warn!(
             provider = %target_provider,
             workspace_id = %workspace_id,
@@ -2155,8 +2014,7 @@ fn adjust_upstream_path_for_versioned_base<'a>(
         Some((p, q)) => (p, Some(q)),
         None => (path_and_query, None),
     };
-    let Some(stripped) = strip_leading_numeric_v_revision_prefix(path_only)
-    else {
+    let Some(stripped) = strip_leading_numeric_v_revision_prefix(path_only) else {
         return Cow::Borrowed(path_and_query);
     };
     let mut out = stripped.to_string();
@@ -2167,12 +2025,8 @@ fn adjust_upstream_path_for_versioned_base<'a>(
     Cow::Owned(out)
 }
 
-fn join_provider_upstream_url(
-    base_url: &url::Url,
-    path_and_query: &str,
-) -> url::Url {
-    let adjusted =
-        adjust_upstream_path_for_versioned_base(base_url, path_and_query);
+fn join_provider_upstream_url(base_url: &url::Url, path_and_query: &str) -> url::Url {
+    let adjusted = adjust_upstream_path_for_versioned_base(base_url, path_and_query);
     let slice = match &adjusted {
         Cow::Borrowed(s) => *s,
         Cow::Owned(s) => s.as_str(),
@@ -2263,16 +2117,17 @@ async fn dispatch_stream_with_retry(
                 max_retries,
                 factor,
             } => {
-                let retry_strategy =
-                    ExponentialBuilder::default()
-                        .with_max_delay(*max_delay)
-                        .with_min_delay(*min_delay)
-                        .with_max_times(usize::from(*max_retries))
-                        .with_factor(factor.to_f32().unwrap_or(
-                            crate::config::retry::DEFAULT_RETRY_FACTOR,
-                        ))
-                        .with_jitter()
-                        .build();
+                let retry_strategy = ExponentialBuilder::default()
+                    .with_max_delay(*max_delay)
+                    .with_min_delay(*min_delay)
+                    .with_max_times(usize::from(*max_retries))
+                    .with_factor(
+                        factor
+                            .to_f32()
+                            .unwrap_or(crate::config::retry::DEFAULT_RETRY_FACTOR),
+                    )
+                    .with_jitter()
+                    .build();
                 (|| async {
                     Dispatcher::dispatch_stream(
                         &request_builder,
@@ -2370,9 +2225,7 @@ fn extract_retry_after(headers: &HeaderMap) -> Option<u64> {
     }
 
     // If that fails, try to parse as HTTP date format
-    if let Ok(datetime) =
-        DateTime::parse_from_str(retry_after_str, "%a, %d %b %Y %H:%M:%S GMT")
-    {
+    if let Ok(datetime) = DateTime::parse_from_str(retry_after_str, "%a, %d %b %Y %H:%M:%S GMT") {
         // Convert to seconds from now
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -2445,9 +2298,8 @@ mod tests {
         session_headers::ALEPHANT_SESSION_ID_HEADER,
         types::{
             extensions::{
-                AuthContext, LargeContextAction, LargeContextDecision,
-                PromptCompressionTokenPair, PromptContext,
-                UnifiedImplicitModelFallbackContext, VkPolicy,
+                AuthContext, LargeContextAction, LargeContextDecision, PromptCompressionTokenPair,
+                PromptContext, UnifiedImplicitModelFallbackContext, VkPolicy,
             },
             org::OrgId,
             secret::Secret,
@@ -2477,8 +2329,8 @@ mod tests {
     #[test]
     fn resolve_master_key_target_url_uses_valid_override() {
         let auth = auth_ctx_with_base_url(Some("https://example.com"));
-        let url = resolve_master_key_target_url(Some(&auth), "/v1/chat")
-            .expect("valid url expected");
+        let url =
+            resolve_master_key_target_url(Some(&auth), "/v1/chat").expect("valid url expected");
         assert_eq!(url.as_str(), "https://example.com/v1/chat");
     }
 
@@ -2520,8 +2372,7 @@ mod tests {
     }
 
     #[test]
-    fn sanitize_upstream_headers_removes_session_headers_and_keeps_other_headers()
-     {
+    fn sanitize_upstream_headers_removes_session_headers_and_keeps_other_headers() {
         let mut headers = HeaderMap::new();
         headers.insert(
             http::header::AUTHORIZATION,
@@ -2679,10 +2530,7 @@ mod tests {
         }
     }
 
-    fn build_test_dispatcher(
-        config: Config,
-        provider: InferenceProvider,
-    ) -> Dispatcher {
+    fn build_test_dispatcher(config: Config, provider: InferenceProvider) -> Dispatcher {
         let rt = tokio::runtime::Runtime::new().expect("runtime");
         let app = rt.block_on(build_test_app(config)).expect("build app");
         let client = rt
@@ -2706,11 +2554,8 @@ mod tests {
         ),
         ApiError,
     > {
-        let stream = futures::stream::once(futures::future::ok::<_, ApiError>(
-            Bytes::new(),
-        ));
-        let (body, reader, rx) =
-            BodyReader::wrap_stream(stream, false, TfftTrigger::Never, None);
+        let stream = futures::stream::once(futures::future::ok::<_, ApiError>(Bytes::new()));
+        let (body, reader, rx) = BodyReader::wrap_stream(stream, false, TfftTrigger::Never, None);
         Ok((
             http::Response::builder()
                 .status(status)
@@ -2751,7 +2596,8 @@ mod tests {
             compression_prompt_token: 2048,
         });
         req.extensions_mut().insert(LargeContextDecision {
-            handler: crate::middleware::large_context::headers::TokenLimitExceptionHandler::Fallback,
+            handler:
+                crate::middleware::large_context::headers::TokenLimitExceptionHandler::Fallback,
             action: LargeContextAction::FallbackApplied,
             original_model: Some("openai/gpt-4o-mini,openai/gpt-4o".to_string()),
             effective_model: Some("openai/gpt-4o".to_string()),
@@ -2775,8 +2621,7 @@ mod tests {
             _prompt_header_for_log,
             large_context_decision,
             prompt_compression_tokens,
-        ) = Dispatcher::extract_request_context(&mut req)
-            .expect("extract context");
+        ) = Dispatcher::extract_request_context(&mut req).expect("extract context");
 
         assert_eq!(
             prompt_compression_tokens,
@@ -2792,8 +2637,7 @@ mod tests {
             "prompt compression tokens should be removed from request \
              extensions"
         );
-        let large_context_decision =
-            large_context_decision.expect("large context decision");
+        let large_context_decision = large_context_decision.expect("large context decision");
         assert_eq!(large_context_decision.handler.as_str(), "fallback");
         assert_eq!(large_context_decision.action.as_str(), "fallback-applied");
         assert_eq!(
@@ -2810,8 +2654,7 @@ mod tests {
             .get_mut(&InferenceProvider::OpenAI)
             .expect("openai config")
             .base_url = "https://global-provider.test/".parse().unwrap();
-        let dispatcher =
-            build_test_dispatcher(config, InferenceProvider::OpenAI);
+        let dispatcher = build_test_dispatcher(config, InferenceProvider::OpenAI);
 
         let req_ctx = request_ctx(
             Some(auth_ctx_with_base_url(Some("https://master-key.test/"))),
@@ -2819,9 +2662,7 @@ mod tests {
                 providers: Some(HashMap::from([(
                     InferenceProvider::OpenAI,
                     RouterProviderConfig {
-                        base_url: "https://router-provider.test/"
-                            .parse()
-                            .unwrap(),
+                        base_url: "https://router-provider.test/".parse().unwrap(),
                         version: None,
                     },
                 )])),
@@ -2830,11 +2671,7 @@ mod tests {
         );
 
         let target_url = dispatcher
-            .build_target_url(
-                &req_ctx,
-                &InferenceProvider::OpenAI,
-                "/v1/chat/completions",
-            )
+            .build_target_url(&req_ctx, &InferenceProvider::OpenAI, "/v1/chat/completions")
             .expect("target url");
 
         assert_eq!(
@@ -2844,16 +2681,14 @@ mod tests {
     }
 
     #[test]
-    fn build_target_url_uses_router_provider_base_url_when_no_master_key_override()
-     {
+    fn build_target_url_uses_router_provider_base_url_when_no_master_key_override() {
         let mut config = Config::default();
         config
             .providers
             .get_mut(&InferenceProvider::OpenAI)
             .expect("openai config")
             .base_url = "https://global-provider.test/".parse().unwrap();
-        let dispatcher =
-            build_test_dispatcher(config, InferenceProvider::OpenAI);
+        let dispatcher = build_test_dispatcher(config, InferenceProvider::OpenAI);
 
         let req_ctx = request_ctx(
             Some(auth_ctx_with_base_url(None)),
@@ -2861,9 +2696,7 @@ mod tests {
                 providers: Some(HashMap::from([(
                     InferenceProvider::OpenAI,
                     RouterProviderConfig {
-                        base_url: "https://router-provider.test/"
-                            .parse()
-                            .unwrap(),
+                        base_url: "https://router-provider.test/".parse().unwrap(),
                         version: None,
                     },
                 )])),
@@ -2872,11 +2705,7 @@ mod tests {
         );
 
         let target_url = dispatcher
-            .build_target_url(
-                &req_ctx,
-                &InferenceProvider::OpenAI,
-                "/v1/chat/completions",
-            )
+            .build_target_url(&req_ctx, &InferenceProvider::OpenAI, "/v1/chat/completions")
             .expect("target url");
 
         assert_eq!(
@@ -2886,25 +2715,19 @@ mod tests {
     }
 
     #[test]
-    fn build_target_url_falls_back_to_global_provider_config_when_router_absent()
-     {
+    fn build_target_url_falls_back_to_global_provider_config_when_router_absent() {
         let mut config = Config::default();
         config
             .providers
             .get_mut(&InferenceProvider::OpenAI)
             .expect("openai config")
             .base_url = "https://global-provider.test/".parse().unwrap();
-        let dispatcher =
-            build_test_dispatcher(config, InferenceProvider::OpenAI);
+        let dispatcher = build_test_dispatcher(config, InferenceProvider::OpenAI);
 
         let req_ctx = request_ctx(Some(auth_ctx_with_base_url(None)), None);
 
         let target_url = dispatcher
-            .build_target_url(
-                &req_ctx,
-                &InferenceProvider::OpenAI,
-                "/v1/chat/completions",
-            )
+            .build_target_url(&req_ctx, &InferenceProvider::OpenAI, "/v1/chat/completions")
             .expect("target url");
 
         assert_eq!(
@@ -2914,17 +2737,14 @@ mod tests {
     }
 
     #[test]
-    fn build_target_url_strips_leading_api_revision_when_base_path_ends_with_vn()
-     {
+    fn build_target_url_strips_leading_api_revision_when_base_path_ends_with_vn() {
         let mut config = Config::default();
         config
             .providers
             .get_mut(&InferenceProvider::OpenAI)
             .expect("openai config")
-            .base_url =
-            "https://open.bigmodel.cn/api/paas/v4/".parse().unwrap();
-        let dispatcher =
-            build_test_dispatcher(config, InferenceProvider::OpenAI);
+            .base_url = "https://open.bigmodel.cn/api/paas/v4/".parse().unwrap();
+        let dispatcher = build_test_dispatcher(config, InferenceProvider::OpenAI);
         let req_ctx = request_ctx(Some(auth_ctx_with_base_url(None)), None);
 
         for path in ["v1/chat/completions", "/v1/chat/completions"] {
@@ -2947,8 +2767,7 @@ mod tests {
             .get_mut(&InferenceProvider::OpenAI)
             .expect("openai config")
             .base_url = "https://global-provider.test/".parse().unwrap();
-        let dispatcher =
-            build_test_dispatcher(config, InferenceProvider::OpenAI);
+        let dispatcher = build_test_dispatcher(config, InferenceProvider::OpenAI);
 
         let req_ctx = request_ctx(
             Some(auth_ctx_with_base_url(Some(
@@ -2958,11 +2777,7 @@ mod tests {
         );
 
         let target_url = dispatcher
-            .build_target_url(
-                &req_ctx,
-                &InferenceProvider::OpenAI,
-                "v1/embeddings?user=a",
-            )
+            .build_target_url(&req_ctx, &InferenceProvider::OpenAI, "v1/embeddings?user=a")
             .expect("target url");
         assert_eq!(
             target_url.as_str(),
@@ -2978,16 +2793,11 @@ mod tests {
             .get_mut(&InferenceProvider::OpenAI)
             .expect("openai config")
             .base_url = "https://open.bigmodel.cn/api/paas/v4".parse().unwrap();
-        let dispatcher =
-            build_test_dispatcher(config, InferenceProvider::OpenAI);
+        let dispatcher = build_test_dispatcher(config, InferenceProvider::OpenAI);
         let req_ctx = request_ctx(Some(auth_ctx_with_base_url(None)), None);
 
         let target_url = dispatcher
-            .build_target_url(
-                &req_ctx,
-                &InferenceProvider::OpenAI,
-                "v1/chat/completions",
-            )
+            .build_target_url(&req_ctx, &InferenceProvider::OpenAI, "v1/chat/completions")
             .expect("target url");
         assert_eq!(
             target_url.as_str(),
@@ -3002,8 +2812,7 @@ mod tests {
             .block_on(build_test_app(Config::default()))
             .expect("build app");
         let req_ctx = empty_request_ctx();
-        let retry =
-            get_retry_config(&app.state, RequestKind::DirectProxy, &req_ctx);
+        let retry = get_retry_config(&app.state, RequestKind::DirectProxy, &req_ctx);
         assert!(retry.is_none(), "direct proxy should skip global retry");
     }
 
@@ -3022,9 +2831,8 @@ mod tests {
         });
         let app = rt.block_on(build_test_app(config)).expect("build app");
         let req_ctx = empty_request_ctx();
-        let retry =
-            get_retry_config(&app.state, RequestKind::UnifiedApi, &req_ctx)
-                .expect("retry config should exist");
+        let retry = get_retry_config(&app.state, RequestKind::UnifiedApi, &req_ctx)
+            .expect("retry config should exist");
         assert_eq!(
             retry,
             Cow::Owned(RetryConfig::Constant {
@@ -3142,10 +2950,8 @@ mod tests {
             .to_string(),
         );
         let rewritten =
-            rewrite_chat_completion_model(&body, "google/gemini-2.5-pro")
-                .expect("rewrite body");
-        let value: serde_json::Value =
-            serde_json::from_slice(&rewritten).expect("json body");
+            rewrite_chat_completion_model(&body, "google/gemini-2.5-pro").expect("rewrite body");
+        let value: serde_json::Value = serde_json::from_slice(&rewritten).expect("json body");
         assert_eq!(
             value.get("model").and_then(serde_json::Value::as_str),
             Some("google/gemini-2.5-pro")
@@ -3162,11 +2968,9 @@ mod tests {
             cache_seed: Some("seed".to_string()),
         };
         let original_url =
-            url::Url::parse("https://openai.test/v1/chat/completions")
-                .expect("original url");
+            url::Url::parse("https://openai.test/v1/chat/completions").expect("original url");
         let effective_url =
-            url::Url::parse("https://groq.test/v1/chat/completions")
-                .expect("effective url");
+            url::Url::parse("https://groq.test/v1/chat/completions").expect("effective url");
         let original_body = Bytes::from(
             serde_json::json!({
                 "model": "openai/gpt-5.4",
@@ -3182,10 +2986,8 @@ mod tests {
             .to_string(),
         );
 
-        let original_keys =
-            llm_kv_slot_keys(&settings, &original_url, &original_body);
-        let effective_keys =
-            llm_kv_write_slot_keys(&settings, &effective_url, &effective_body);
+        let original_keys = llm_kv_slot_keys(&settings, &original_url, &original_body);
+        let effective_keys = llm_kv_write_slot_keys(&settings, &effective_url, &effective_body);
 
         assert_ne!(effective_keys, original_keys);
         assert_eq!(
@@ -3211,14 +3013,12 @@ mod tests {
             .to_string(),
         );
 
-        let semantic_body =
-            semantic_write_body_bytes(&original_body, &effective_body);
+        let semantic_body = semantic_write_body_bytes(&original_body, &effective_body);
         assert_eq!(semantic_body, original_body.to_vec());
     }
 
     #[test]
-    fn cross_provider_fallback_request_details_use_effective_provider_url_and_body()
-     {
+    fn cross_provider_fallback_request_details_use_effective_provider_url_and_body() {
         let openai_provider = InferenceProvider::OpenAI;
         let groq_provider = InferenceProvider::Named("groq".into());
         let groq_model = "llama-3.1-8b";
@@ -3251,15 +3051,14 @@ mod tests {
             .to_string(),
         );
 
-        let (effective_provider, effective_target_url, effective_request_body) =
-            dispatcher
-                .cross_provider_fallback_request_details(
-                    &req_ctx,
-                    "/v1/chat/completions",
-                    &req_body_bytes,
-                    &format!("groq/{groq_model}"),
-                )
-                .expect("fallback request details");
+        let (effective_provider, effective_target_url, effective_request_body) = dispatcher
+            .cross_provider_fallback_request_details(
+                &req_ctx,
+                "/v1/chat/completions",
+                &req_body_bytes,
+                &format!("groq/{groq_model}"),
+            )
+            .expect("fallback request details");
 
         assert_eq!(effective_provider, groq_provider);
         assert_eq!(
@@ -3267,8 +3066,7 @@ mod tests {
             "https://groq.test/v1/chat/completions"
         );
         let effective_body: serde_json::Value =
-            serde_json::from_slice(&effective_request_body)
-                .expect("effective body json");
+            serde_json::from_slice(&effective_request_body).expect("effective body json");
         assert_eq!(
             effective_body
                 .get("model")

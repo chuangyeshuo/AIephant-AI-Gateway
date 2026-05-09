@@ -72,9 +72,7 @@ pub fn model_ids_from_policy_overrides_json(v: &Value) -> Option<Vec<String>> {
             }
         }
     }
-    if let Some(whitelist) =
-        v.get("modelWhitelist").or_else(|| v.get("model_whitelist"))
-    {
+    if let Some(whitelist) = v.get("modelWhitelist").or_else(|| v.get("model_whitelist")) {
         if let Some(m) = whitelist.get("models") {
             if let Some(list) = non_empty_string_ids(m.clone()) {
                 return Some(list);
@@ -121,11 +119,7 @@ mod local_tests {
 
     #[test]
     fn first_non_empty_respects_order() {
-        let r = first_non_empty_list(
-            None,
-            Some(vec!["b".into()]),
-            Some(vec!["a".into()]),
-        );
+        let r = first_non_empty_list(None, Some(vec!["b".into()]), Some(vec!["a".into()]));
         assert_eq!(r, Some(vec!["b".to_string()]));
     }
 

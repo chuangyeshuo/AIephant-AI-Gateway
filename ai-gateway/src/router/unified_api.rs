@@ -6,9 +6,8 @@ use std::{
 };
 
 use async_openai::types::{
-    CreateChatCompletionRequest, CreateCompletionRequest,
-    CreateEmbeddingRequest, CreateImageRequest, ImageModel,
-    responses::CreateResponse,
+    CreateChatCompletionRequest, CreateCompletionRequest, CreateEmbeddingRequest,
+    CreateImageRequest, ImageModel, responses::CreateResponse,
 };
 use bytes::Bytes;
 use futures::{future::BoxFuture, ready};
@@ -22,8 +21,7 @@ use crate::{
     default_model::choose_default_gateway_model,
     endpoints::{ApiEndpoint, anthropic::Anthropic, openai::OpenAI},
     error::{
-        api::ApiError, init::InitError, internal::InternalError,
-        invalid_req::InvalidRequestError,
+        api::ApiError, init::InitError, internal::InternalError, invalid_req::InvalidRequestError,
     },
     middleware::{
         large_context::maybe_transform_unified_api_chat_request,
@@ -31,14 +29,11 @@ use crate::{
     },
     router::{
         direct::{DirectProxies, DirectProxyService},
-        target_provider_resolve::{
-            provider_from_bare_model, resolve_unified_target_provider,
-        },
+        target_provider_resolve::{provider_from_bare_model, resolve_unified_target_provider},
     },
     types::{
         extensions::{
-            AuthContext, MasterKeyUnifiedModelPassthrough,
-            UnifiedChatCompletionsResponsesBridge,
+            AuthContext, MasterKeyUnifiedModelPassthrough, UnifiedChatCompletionsResponsesBridge,
             UnifiedImplicitModelFallbackContext, VkPolicy,
         },
         provider::InferenceProvider,
@@ -70,10 +65,7 @@ impl tower::Service<Request> for Service {
     type Future = ResponseFuture;
 
     #[inline]
-    fn poll_ready(
-        &mut self,
-        _cx: &mut Context<'_>,
-    ) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 
@@ -166,9 +158,7 @@ impl TryFrom<&str> for UnifiedApi {
             "images/generations" => Ok(Self::ImageGenerations),
             "responses" => Ok(Self::Responses),
             "messages" => Ok(Self::Messages),
-            _ => {
-                Err(InvalidRequestError::UnsupportedEndpoint(value.to_string()))
-            }
+            _ => Err(InvalidRequestError::UnsupportedEndpoint(value.to_string())),
         }
     }
 }
@@ -214,20 +204,17 @@ async fn inject_default_model_into_body_unified(
     vk: VkPolicy,
 ) -> Result<Bytes, ApiError> {
     if std::env::var_os("AI_GATEWAY_DEBUG_UNIFIED").is_some() {
-        tracing::info!(
-            "[unified_api] inject_default_model_into_body: entered path={path}"
-        );
+        tracing::info!("[unified_api] inject_default_model_into_body: entered path={path}");
     }
     tracing::warn!(path = %path, "inject_default_model_into_body_unified: entered");
     if model_field_from_json_body(&body).is_some() {
         return Ok(body);
     }
     let chosen = choose_default_gateway_model(&app, &path, &auth, &vk).await?;
-    let mut v: serde_json::Value = serde_json::from_slice(&body)
-        .map_err(InvalidRequestError::InvalidRequestBody)?;
+    let mut v: serde_json::Value =
+        serde_json::from_slice(&body).map_err(InvalidRequestError::InvalidRequestBody)?;
     v["model"] = serde_json::Value::String(chosen);
-    let out = serde_json::to_vec(&v)
-        .map_err(InvalidRequestError::InvalidRequestBody)?;
+    let out = serde_json::to_vec(&v).map_err(InvalidRequestError::InvalidRequestBody)?;
     Ok(Bytes::from(out))
 }
 
@@ -282,8 +269,7 @@ fn apply_chat_completions_body_redirect_if_needed(
         Some(q) => format!("responses?{q}"),
         None => "responses".to_string(),
     };
-    let new_pq = PathAndQuery::from_str(&new_pq_str)
-        .map_err(InternalError::InvalidUri)?;
+    let new_pq = PathAndQuery::from_str(&new_pq_str).map_err(InternalError::InvalidUri)?;
     parts.extensions.insert(new_pq);
     tracing::debug!(
         "unified_api: chat/completions body has Responses API shape (input, \
@@ -304,13 +290,10 @@ impl Future for ResponseFuture {
                     collect_future,
                     parts,
                 } => {
-                    let collected = match ready!(pin!(collect_future).poll(cx))
-                    {
+                    let collected = match ready!(pin!(collect_future).poll(cx)) {
                         Ok(collected) => collected,
                         Err(e) => {
-                            return Poll::Ready(Err(
-                                InternalError::CollectBodyError(e).into(),
-                            ));
+                            return Poll::Ready(Err(InternalError::CollectBodyError(e).into()));
                         }
                     };
                     let collected_bytes = collected.to_bytes();
@@ -320,38 +303,26 @@ impl Future for ResponseFuture {
                             collected_bytes.len()
                         );
                     }
-                    let mut parts =
-                        parts.take().expect("future polled after completion");
-                    let Some(extracted_path_and_query) =
-                        parts.extensions.get::<PathAndQuery>()
+                    let mut parts = parts.take().expect("future polled after completion");
+                    let Some(extracted_path_and_query) = parts.extensions.get::<PathAndQuery>()
                     else {
                         return Poll::Ready(Err(
-                            InternalError::ExtensionNotFound("PathAndQuery")
-                                .into(),
+                            InternalError::ExtensionNotFound("PathAndQuery").into()
                         ));
                     };
 
-                    let unified =
-                        UnifiedApi::try_from(extracted_path_and_query.path())?;
+                    let unified = UnifiedApi::try_from(extracted_path_and_query.path())?;
                     let api = match unified {
                         UnifiedApi::ChatCompletions => {
                             ApiEndpoint::OpenAI(OpenAI::chat_completions())
                         }
-                        UnifiedApi::Completions => {
-                            ApiEndpoint::OpenAI(OpenAI::completions())
-                        }
-                        UnifiedApi::Embeddings => {
-                            ApiEndpoint::OpenAI(OpenAI::embeddings())
-                        }
+                        UnifiedApi::Completions => ApiEndpoint::OpenAI(OpenAI::completions()),
+                        UnifiedApi::Embeddings => ApiEndpoint::OpenAI(OpenAI::embeddings()),
                         UnifiedApi::ImageGenerations => {
                             ApiEndpoint::OpenAI(OpenAI::image_generations())
                         }
-                        UnifiedApi::Responses => {
-                            ApiEndpoint::OpenAI(OpenAI::responses())
-                        }
-                        UnifiedApi::Messages => {
-                            ApiEndpoint::Anthropic(Anthropic::messages())
-                        }
+                        UnifiedApi::Responses => ApiEndpoint::OpenAI(OpenAI::responses()),
+                        UnifiedApi::Messages => ApiEndpoint::Anthropic(Anthropic::messages()),
                     };
                     parts.extensions.insert(api);
 
@@ -362,9 +333,7 @@ impl Future for ResponseFuture {
                     });
                 }
                 StateProj::AwaitDefaultModel { mut fut, parts } => {
-                    let res = if let std::task::Poll::Ready(r) =
-                        fut.as_mut().poll(cx)
-                    {
+                    let res = if let std::task::Poll::Ready(r) = fut.as_mut().poll(cx) {
                         r
                     } else {
                         return std::task::Poll::Pending;
@@ -375,16 +344,13 @@ impl Future for ResponseFuture {
                             return std::task::Poll::Ready(Err(e));
                         }
                     };
-                    let mut parts =
-                        parts.take().expect("future polled after completion");
+                    let mut parts = parts.take().expect("future polled after completion");
                     let path = parts
                         .extensions
                         .get::<PathAndQuery>()
                         .map(|value| value.path().to_string())
                         .unwrap_or_default();
-                    if let Some(ctx) =
-                        implicit_default_model_fallback_context(&path, &body)
-                    {
+                    if let Some(ctx) = implicit_default_model_fallback_context(&path, &body) {
                         parts.extensions.insert(ctx);
                     }
                     this.state.set(State::DetermineProvider {
@@ -401,14 +367,11 @@ impl Future for ResponseFuture {
                     let original_body = collected_body
                         .take()
                         .expect("future polled after completion");
-                    let mut parts =
-                        parts.take().expect("future polled after completion");
+                    let mut parts = parts.take().expect("future polled after completion");
                     let mut path = parts
                         .extensions
                         .get::<PathAndQuery>()
-                        .ok_or(InternalError::ExtensionNotFound(
-                            "PathAndQuery",
-                        ))?
+                        .ok_or(InternalError::ExtensionNotFound("PathAndQuery"))?
                         .path()
                         .to_string();
                     let body = if *pre_transformed {
@@ -420,31 +383,19 @@ impl Future for ResponseFuture {
                             original_body,
                         )?
                     };
-                    if !*pre_transformed
-                        && model_field_from_json_body(&body).is_none()
-                    {
-                        let Some(auth) =
-                            parts.extensions.get::<AuthContext>().cloned()
-                        else {
-                            return Poll::Ready(Err(
-                                InvalidRequestError::NoModelAvailable.into(),
-                            ));
+                    if !*pre_transformed && model_field_from_json_body(&body).is_none() {
+                        let Some(auth) = parts.extensions.get::<AuthContext>().cloned() else {
+                            return Poll::Ready(Err(InvalidRequestError::NoModelAvailable.into()));
                         };
-                        let Some(vk) =
-                            parts.extensions.get::<VkPolicy>().cloned()
-                        else {
-                            return Poll::Ready(Err(
-                                InvalidRequestError::NoModelAvailable.into(),
-                            ));
+                        let Some(vk) = parts.extensions.get::<VkPolicy>().cloned() else {
+                            return Poll::Ready(Err(InvalidRequestError::NoModelAvailable.into()));
                         };
                         let app = this.app_state.clone();
                         let path_c = path.clone();
                         this.state.set(State::AwaitDefaultModel {
-                            fut: Box::pin(
-                                inject_default_model_into_body_unified(
-                                    app, path_c, body, auth, vk,
-                                ),
-                            ),
+                            fut: Box::pin(inject_default_model_into_body_unified(
+                                app, path_c, body, auth, vk,
+                            )),
                             parts: Some(parts),
                         });
                         // Must `continue` to the next `match` round and
@@ -457,9 +408,8 @@ impl Future for ResponseFuture {
                         // `AwaitDefaultModel`, so this path matters).
                         continue;
                     }
-                    path = apply_chat_completions_body_redirect_if_needed(
-                        &path, &body, &mut parts,
-                    )?;
+                    path =
+                        apply_chat_completions_body_redirect_if_needed(&path, &body, &mut parts)?;
                     let compat = this.app_state.config().compat_mode;
                     // Owned clone (cheap: typically 0–1 elements) so the borrow
                     // does not conflict with the later
@@ -484,17 +434,10 @@ impl Future for ResponseFuture {
 
                     let (provider, out_body) = match path.as_str() {
                         "chat/completions" => {
-                            let d = serde_json::from_slice::<
-                                CreateChatCompletionRequest,
-                            >(&body)
-                            .map_err(InvalidRequestError::InvalidRequestBody)?;
+                            let d = serde_json::from_slice::<CreateChatCompletionRequest>(&body)
+                                .map_err(InvalidRequestError::InvalidRequestBody)?;
                             if let Err(e) = check_access(&d.model) {
-                                this.app_state
-                                    .0
-                                    .metrics
-                                    .vk
-                                    .model_denied
-                                    .add(1, &[]);
+                                this.app_state.0.metrics.vk.model_denied.add(1, &[]);
                                 tracing::debug!(
                                     model = %d.model,
                                     "virtual key model access denied"
@@ -510,17 +453,10 @@ impl Future for ResponseFuture {
                             (provider, body)
                         }
                         "completions" => {
-                            let r = serde_json::from_slice::<
-                                CreateCompletionRequest,
-                            >(&body)
-                            .map_err(InvalidRequestError::InvalidRequestBody)?;
+                            let r = serde_json::from_slice::<CreateCompletionRequest>(&body)
+                                .map_err(InvalidRequestError::InvalidRequestBody)?;
                             if let Err(e) = check_access(&r.model) {
-                                this.app_state
-                                    .0
-                                    .metrics
-                                    .vk
-                                    .model_denied
-                                    .add(1, &[]);
+                                this.app_state.0.metrics.vk.model_denied.add(1, &[]);
                                 return Poll::Ready(Err(e));
                             }
                             let provider = resolve_unified_target_provider(
@@ -532,17 +468,10 @@ impl Future for ResponseFuture {
                             (provider, body)
                         }
                         "embeddings" => {
-                            let r = serde_json::from_slice::<
-                                CreateEmbeddingRequest,
-                            >(&body)
-                            .map_err(InvalidRequestError::InvalidRequestBody)?;
+                            let r = serde_json::from_slice::<CreateEmbeddingRequest>(&body)
+                                .map_err(InvalidRequestError::InvalidRequestBody)?;
                             if let Err(e) = check_access(&r.model) {
-                                this.app_state
-                                    .0
-                                    .metrics
-                                    .vk
-                                    .model_denied
-                                    .add(1, &[]);
+                                this.app_state.0.metrics.vk.model_denied.add(1, &[]);
                                 return Poll::Ready(Err(e));
                             }
                             let provider = resolve_unified_target_provider(
@@ -554,25 +483,15 @@ impl Future for ResponseFuture {
                             (provider, body)
                         }
                         "images/generations" => {
-                            let r =
-                                serde_json::from_slice::<CreateImageRequest>(
-                                    &body,
-                                )
-                                .map_err(
-                                    InvalidRequestError::InvalidRequestBody,
-                                )?;
+                            let r = serde_json::from_slice::<CreateImageRequest>(&body)
+                                .map_err(InvalidRequestError::InvalidRequestBody)?;
                             let model_s = r
                                 .model
                                 .as_ref()
                                 .ok_or(InvalidRequestError::MissingModelId)?;
                             let name = image_model_routing_name(model_s);
                             if let Err(e) = check_access(&name) {
-                                this.app_state
-                                    .0
-                                    .metrics
-                                    .vk
-                                    .model_denied
-                                    .add(1, &[]);
+                                this.app_state.0.metrics.vk.model_denied.add(1, &[]);
                                 return Poll::Ready(Err(e));
                             }
                             let provider = resolve_unified_target_provider(
@@ -584,18 +503,10 @@ impl Future for ResponseFuture {
                             (provider, body)
                         }
                         "responses" => {
-                            let d =
-                                serde_json::from_slice::<CreateResponse>(&body)
-                                    .map_err(
-                                        InvalidRequestError::InvalidRequestBody,
-                                    )?;
+                            let d = serde_json::from_slice::<CreateResponse>(&body)
+                                .map_err(InvalidRequestError::InvalidRequestBody)?;
                             if let Err(e) = check_access(&d.model) {
-                                this.app_state
-                                    .0
-                                    .metrics
-                                    .vk
-                                    .model_denied
-                                    .add(1, &[]);
+                                this.app_state.0.metrics.vk.model_denied.add(1, &[]);
                                 tracing::debug!(
                                     model = %d.model,
                                     "virtual key model access denied"
@@ -612,20 +523,10 @@ impl Future for ResponseFuture {
                         }
                         "messages" => {
                             use anthropic_ai_sdk::types::message::CreateMessageParams;
-                            let r =
-                                serde_json::from_slice::<CreateMessageParams>(
-                                    &body,
-                                )
-                                .map_err(
-                                    InvalidRequestError::InvalidRequestBody,
-                                )?;
+                            let r = serde_json::from_slice::<CreateMessageParams>(&body)
+                                .map_err(InvalidRequestError::InvalidRequestBody)?;
                             if let Err(e) = check_access(&r.model) {
-                                this.app_state
-                                    .0
-                                    .metrics
-                                    .vk
-                                    .model_denied
-                                    .add(1, &[]);
+                                this.app_state.0.metrics.vk.model_denied.add(1, &[]);
                                 return Poll::Ready(Err(e));
                             }
                             let provider = resolve_unified_target_provider(
@@ -637,49 +538,36 @@ impl Future for ResponseFuture {
                             (provider, body)
                         }
                         _ => {
-                            return Poll::Ready(Err(
-                                InvalidRequestError::NotFound(path).into(),
-                            ));
+                            return Poll::Ready(Err(InvalidRequestError::NotFound(path).into()));
                         }
                     };
                     parts.extensions.insert(provider.clone());
-                    let request = Request::from_parts(
-                        parts,
-                        axum_core::body::Body::from(out_body),
-                    );
+                    let request = Request::from_parts(parts, axum_core::body::Body::from(out_body));
                     this.state.set(State::InitProxy {
                         request: Some(request),
                         provider,
                     });
                 }
                 StateProj::InitProxy { request, provider } => {
-                    let mut request =
-                        request.take().expect("future polled after completion");
-                    let mut direct_proxy = match this
-                        .direct_proxies
-                        .get(provider)
-                        .cloned()
-                    {
+                    let mut request = request.take().expect("future polled after completion");
+                    let mut direct_proxy = match this.direct_proxies.get(provider).cloned() {
                         Some(p) => p,
                         None => {
                             let custom_fallback = request
                                 .extensions()
                                 .get::<AuthContext>()
                                 .is_some_and(|auth| {
-                                    auth.is_custom_provider
-                                        && auth.master_key_base_url.is_some()
+                                    auth.is_custom_provider && auth.master_key_base_url.is_some()
                                 });
                             if !custom_fallback {
                                 tracing::warn!(
                                     provider = %provider,
                                     "requested provider is not configured for direct proxy"
                                 );
-                                return Poll::Ready(Err(
-                                    InvalidRequestError::UnsupportedProvider(
-                                        provider.clone(),
-                                    )
-                                    .into(),
-                                ));
+                                return Poll::Ready(Err(InvalidRequestError::UnsupportedProvider(
+                                    provider.clone(),
+                                )
+                                .into()));
                             }
                             let auth = request
                                 .extensions()
@@ -712,12 +600,10 @@ impl Future for ResponseFuture {
                                     "unified_api: custom master_key base_url set but \
                                      neither Custom nor OpenAI direct proxy stack exists"
                                 );
-                                return Poll::Ready(Err(
-                                    InvalidRequestError::UnsupportedProvider(
-                                        provider.clone(),
-                                    )
-                                    .into(),
-                                ));
+                                return Poll::Ready(Err(InvalidRequestError::UnsupportedProvider(
+                                    provider.clone(),
+                                )
+                                .into()));
                             };
                             tracing::debug!(fallback_carrier = carrier_name);
                             proxy
@@ -727,14 +613,13 @@ impl Future for ResponseFuture {
                     this.state.set(State::Proxy { response_future });
                 }
                 StateProj::Proxy { response_future } => {
-                    let response =
-                        ready!(response_future.poll(cx)).map_err(|_| {
-                            tracing::error!(
-                                "encountered error from what should be \
+                    let response = ready!(response_future.poll(cx)).map_err(|_| {
+                        tracing::error!(
+                            "encountered error from what should be \
                                  infallible service"
-                            );
-                            InternalError::Internal
-                        })?;
+                        );
+                        InternalError::Internal
+                    })?;
                     return Poll::Ready(Ok(response));
                 }
             }
@@ -750,8 +635,7 @@ mod tests {
     use http::uri::PathAndQuery;
 
     use super::{
-        apply_chat_completions_body_redirect_if_needed,
-        implicit_default_model_fallback_context,
+        apply_chat_completions_body_redirect_if_needed, implicit_default_model_fallback_context,
     };
     use crate::endpoints::{ApiEndpoint, openai::OpenAI};
 
@@ -765,19 +649,12 @@ mod tests {
             .to_string(),
         );
 
-        let ctx =
-            implicit_default_model_fallback_context("chat/completions", &body)
-                .expect("chat completions should produce fallback context");
+        let ctx = implicit_default_model_fallback_context("chat/completions", &body)
+            .expect("chat completions should produce fallback context");
         assert_eq!(ctx.selected_model, "openai/gpt-5.4");
 
-        assert!(
-            implicit_default_model_fallback_context("responses", &body)
-                .is_none()
-        );
-        assert!(
-            implicit_default_model_fallback_context("embeddings", &body)
-                .is_none()
-        );
+        assert!(implicit_default_model_fallback_context("responses", &body).is_none());
+        assert!(implicit_default_model_fallback_context("embeddings", &body).is_none());
     }
 
     #[test]
@@ -789,19 +666,14 @@ mod tests {
             .to_string(),
         );
 
-        assert!(
-            implicit_default_model_fallback_context("chat/completions", &body)
-                .is_none()
-        );
+        assert!(implicit_default_model_fallback_context("chat/completions", &body).is_none());
     }
 
     #[test]
     fn chat_completions_redirects_to_responses_when_input_without_messages() {
-        let body = Bytes::from(
-            r#"{"model":"openai/gpt-5.4","input":[{"role":"user","content":"hi"}]}"#,
-        );
-        let mut parts =
-            http::Request::builder().body(()).unwrap().into_parts().0;
+        let body =
+            Bytes::from(r#"{"model":"openai/gpt-5.4","input":[{"role":"user","content":"hi"}]}"#);
+        let mut parts = http::Request::builder().body(()).unwrap().into_parts().0;
         parts
             .extensions
             .insert(PathAndQuery::from_str("chat/completions").unwrap());
@@ -809,12 +681,9 @@ mod tests {
             .extensions
             .insert(ApiEndpoint::OpenAI(OpenAI::chat_completions()));
 
-        let out = apply_chat_completions_body_redirect_if_needed(
-            "chat/completions",
-            &body,
-            &mut parts,
-        )
-        .unwrap();
+        let out =
+            apply_chat_completions_body_redirect_if_needed("chat/completions", &body, &mut parts)
+                .unwrap();
         assert_eq!(out, "responses");
         assert_eq!(
             parts.extensions.get::<ApiEndpoint>(),
@@ -828,18 +697,13 @@ mod tests {
     #[test]
     fn chat_completions_redirect_preserves_query() {
         let body = Bytes::from(r#"{"model":"m","input":[]}"#);
-        let mut parts =
-            http::Request::builder().body(()).unwrap().into_parts().0;
-        parts.extensions.insert(
-            PathAndQuery::from_str("chat/completions?trace=1").unwrap(),
-        );
+        let mut parts = http::Request::builder().body(()).unwrap().into_parts().0;
+        parts
+            .extensions
+            .insert(PathAndQuery::from_str("chat/completions?trace=1").unwrap());
 
-        apply_chat_completions_body_redirect_if_needed(
-            "chat/completions",
-            &body,
-            &mut parts,
-        )
-        .unwrap();
+        apply_chat_completions_body_redirect_if_needed("chat/completions", &body, &mut parts)
+            .unwrap();
 
         let pq = parts.extensions.get::<PathAndQuery>().unwrap();
         assert_eq!(pq.path(), "responses");
@@ -848,39 +712,30 @@ mod tests {
 
     #[test]
     fn chat_completions_no_redirect_when_messages_present() {
-        let body = Bytes::from(
-            r#"{"model":"openai/x","messages":[{"role":"user","content":"hi"}]}"#,
-        );
-        let mut parts =
-            http::Request::builder().body(()).unwrap().into_parts().0;
+        let body =
+            Bytes::from(r#"{"model":"openai/x","messages":[{"role":"user","content":"hi"}]}"#);
+        let mut parts = http::Request::builder().body(()).unwrap().into_parts().0;
         parts
             .extensions
             .insert(PathAndQuery::from_str("chat/completions").unwrap());
 
-        let out = apply_chat_completions_body_redirect_if_needed(
-            "chat/completions",
-            &body,
-            &mut parts,
-        )
-        .unwrap();
+        let out =
+            apply_chat_completions_body_redirect_if_needed("chat/completions", &body, &mut parts)
+                .unwrap();
         assert_eq!(out, "chat/completions");
     }
 
     #[test]
     fn chat_completions_no_redirect_without_input() {
         let body = Bytes::from(r#"{"model":"openai/x"}"#);
-        let mut parts =
-            http::Request::builder().body(()).unwrap().into_parts().0;
+        let mut parts = http::Request::builder().body(()).unwrap().into_parts().0;
         parts
             .extensions
             .insert(PathAndQuery::from_str("chat/completions").unwrap());
 
-        let out = apply_chat_completions_body_redirect_if_needed(
-            "chat/completions",
-            &body,
-            &mut parts,
-        )
-        .unwrap();
+        let out =
+            apply_chat_completions_body_redirect_if_needed("chat/completions", &body, &mut parts)
+                .unwrap();
         assert_eq!(out, "chat/completions");
     }
 }

@@ -16,8 +16,8 @@ use crate::{
         non_stream_profile_data::default_non_stream_profile,
         rules::ProviderRuleSet,
         stream_normalizer::{
-            build_finish_choice, build_stream_response, build_stream_usage,
-            build_text_choice, build_tool_call_chunk, build_tool_choice,
+            build_finish_choice, build_stream_response, build_stream_usage, build_text_choice,
+            build_tool_call_chunk, build_tool_choice,
         },
     },
     types::{
@@ -40,27 +40,19 @@ impl AnthropicConverter {
     ) -> NonStreamFormatProfile {
         let mut non_stream_profile = default_non_stream_profile(provider);
         non_stream_profile.family = rules.family;
-        non_stream_profile.request.system_handling =
-            rules.request.system_handling;
-        non_stream_profile.request.tool_choice_mode =
-            rules.request.tool_choice_mode;
-        non_stream_profile.request.response_format_mode =
-            rules.request.response_format_mode;
-        non_stream_profile.request.reasoning_mode =
-            rules.request.reasoning_mode;
-        non_stream_profile.request.multimodal_mode =
-            rules.request.multimodal_mode;
+        non_stream_profile.request.system_handling = rules.request.system_handling;
+        non_stream_profile.request.tool_choice_mode = rules.request.tool_choice_mode;
+        non_stream_profile.request.response_format_mode = rules.request.response_format_mode;
+        non_stream_profile.request.reasoning_mode = rules.request.reasoning_mode;
+        non_stream_profile.request.multimodal_mode = rules.request.multimodal_mode;
         non_stream_profile
     }
 
     #[allow(dead_code)]
     #[must_use]
     pub fn new(model_mapper: ModelMapper) -> Self {
-        let capabilities =
-            ProviderCapabilities::for_provider(&InferenceProvider::Anthropic);
-        let rules = super::rule_data::default_provider_rules(
-            &InferenceProvider::Anthropic,
-        );
+        let capabilities = ProviderCapabilities::for_provider(&InferenceProvider::Anthropic);
+        let rules = super::rule_data::default_provider_rules(&InferenceProvider::Anthropic);
         Self::new_with_metadata(capabilities, rules, model_mapper)
     }
 
@@ -119,9 +111,7 @@ fn map_reasoning_effort_to_thinking(
 
     let budget_tokens = match reasoning_effort? {
         ReasoningEffort::Low => 1024,
-        ReasoningEffort::Medium => {
-            usize::max(1024, (max_tokens as usize * 2) / 3)
-        }
+        ReasoningEffort::Medium => usize::max(1024, (max_tokens as usize * 2) / 3),
         ReasoningEffort::High => max_tokens as usize,
     };
 
@@ -143,10 +133,8 @@ impl
     fn try_convert(
         &self,
         value: async_openai::types::CreateChatCompletionRequest,
-    ) -> std::result::Result<
-        anthropic_ai_sdk::types::message::CreateMessageParams,
-        Self::Error,
-    > {
+    ) -> std::result::Result<anthropic_ai_sdk::types::message::CreateMessageParams, Self::Error>
+    {
         use anthropic_ai_sdk::types::message as anthropic;
         use async_openai::types as openai;
         let source_model = ModelId::from_str(&value.model)?;
@@ -192,10 +180,7 @@ impl
                     Some(anthropic::Tool {
                         name: func.name.clone(),
                         description: func.description.clone(),
-                        input_schema: func
-                            .parameters
-                            .clone()
-                            .unwrap_or_default(),
+                        input_schema: func.parameters.clone().unwrap_or_default(),
                     })
                 })
                 .collect();
@@ -210,10 +195,8 @@ impl
         let metadata = value.user.map(|user| anthropic::Metadata {
             fields: HashMap::from([("user_id".to_string(), user)]),
         });
-        let thinking = map_reasoning_effort_to_thinking(
-            value.reasoning_effort.as_ref(),
-            max_tokens,
-        );
+        let thinking =
+            map_reasoning_effort_to_thinking(value.reasoning_effort.as_ref(), max_tokens);
 
         let tool_choice = match value.tool_choice {
             Some(openai::ChatCompletionToolChoiceOption::Named(tool)) => {
@@ -221,15 +204,11 @@ impl
                     name: tool.function.name,
                 })
             }
-            Some(openai::ChatCompletionToolChoiceOption::Auto) => {
-                Some(anthropic::ToolChoice::Auto)
-            }
+            Some(openai::ChatCompletionToolChoiceOption::Auto) => Some(anthropic::ToolChoice::Auto),
             Some(openai::ChatCompletionToolChoiceOption::Required) => {
                 Some(anthropic::ToolChoice::Any)
             }
-            Some(openai::ChatCompletionToolChoiceOption::None) => {
-                Some(anthropic::ToolChoice::None)
-            }
+            Some(openai::ChatCompletionToolChoiceOption::None) => Some(anthropic::ToolChoice::None),
             None => None,
         };
 
@@ -242,8 +221,8 @@ impl
                 openai::ChatCompletionRequestMessage::User(message) => {
                     let mapped_content = match message.content {
                         openai::ChatCompletionRequestUserMessageContent::Text(content) => {
-                                    anthropic::MessageContent::Text { content }
-                        },
+                            anthropic::MessageContent::Text { content }
+                        }
                         openai::ChatCompletionRequestUserMessageContent::Array(content) => {
                             let mapped_content_blocks = content.into_iter().filter_map(|part| {
                                 match part {
@@ -274,8 +253,10 @@ impl
                                     },
                                 }
                             }).collect();
-                            anthropic::MessageContent::Blocks { content: mapped_content_blocks }
-                        },
+                            anthropic::MessageContent::Blocks {
+                                content: mapped_content_blocks,
+                            }
+                        }
                     };
                     let mapped_message = anthropic::Message {
                         role: anthropic::Role::User,
@@ -288,12 +269,17 @@ impl
 
                     // Handle text content
                     match message.content {
-                        Some(openai::ChatCompletionRequestAssistantMessageContent::Text(content)) => {
+                        Some(openai::ChatCompletionRequestAssistantMessageContent::Text(
+                            content,
+                        )) => {
                             if !content.is_empty() {
-                                content_blocks.push(anthropic::ContentBlock::Text { text: content });
+                                content_blocks
+                                    .push(anthropic::ContentBlock::Text { text: content });
                             }
-                        },
-                        Some(openai::ChatCompletionRequestAssistantMessageContent::Array(content)) => {
+                        }
+                        Some(openai::ChatCompletionRequestAssistantMessageContent::Array(
+                            content,
+                        )) => {
                             for part in content {
                                 match part {
                                     openai::ChatCompletionRequestAssistantMessageContentPart::Text(text) => {
@@ -304,45 +290,34 @@ impl
                                     },
                                 }
                             }
-                        },
-                        None => {}, // No content, but we might have tool_calls
+                        }
+                        None => {} // No content, but we might have tool_calls
                     }
 
                     // Handle tool calls
                     if let Some(tool_calls) = message.tool_calls {
                         for tool_call in tool_calls {
-                            let input =
-                                if tool_call.function.arguments.is_empty() {
-                                    serde_json::Value::Object(
-                                        serde_json::Map::new(),
-                                    )
-                                } else {
-                                    serde_json::from_str(
-                                        &tool_call.function.arguments,
-                                    )
-                                    .unwrap_or_else(|_| {
-                                        serde_json::Value::Object(
-                                            serde_json::Map::new(),
-                                        )
-                                    })
-                                };
+                            let input = if tool_call.function.arguments.is_empty() {
+                                serde_json::Value::Object(serde_json::Map::new())
+                            } else {
+                                serde_json::from_str(&tool_call.function.arguments).unwrap_or_else(
+                                    |_| serde_json::Value::Object(serde_json::Map::new()),
+                                )
+                            };
 
-                            content_blocks.push(
-                                anthropic::ContentBlock::ToolUse {
-                                    id: tool_call.id,
-                                    name: tool_call.function.name,
-                                    input,
-                                },
-                            );
+                            content_blocks.push(anthropic::ContentBlock::ToolUse {
+                                id: tool_call.id,
+                                name: tool_call.function.name,
+                                input,
+                            });
                         }
                     }
 
                     // Only create message if we have some content
                     if !content_blocks.is_empty() {
-                        let mapped_content =
-                            anthropic::MessageContent::Blocks {
-                                content: content_blocks,
-                            };
+                        let mapped_content = anthropic::MessageContent::Blocks {
+                            content: content_blocks,
+                        };
                         let mapped_message = anthropic::Message {
                             role: anthropic::Role::Assistant,
                             content: mapped_content,
@@ -358,18 +333,26 @@ impl
                                 tool_use_id: message.tool_call_id,
                                 content,
                             };
-                            anthropic::MessageContent::Blocks { content: vec![block] }
-                        },
+                            anthropic::MessageContent::Blocks {
+                                content: vec![block],
+                            }
+                        }
                         openai::ChatCompletionRequestToolMessageContent::Array(content) => {
-                            let mapped_content_blocks = content.into_iter().map(|part| {
-                                match part {
-                                    openai::ChatCompletionRequestToolMessageContentPart::Text(text) => {
-                                        anthropic::ContentBlock::ToolResult { tool_use_id: message.tool_call_id.clone(), content: text.text }
+                            let mapped_content_blocks = content
+                                .into_iter()
+                                .map(|part| match part {
+                                    openai::ChatCompletionRequestToolMessageContentPart::Text(
+                                        text,
+                                    ) => anthropic::ContentBlock::ToolResult {
+                                        tool_use_id: message.tool_call_id.clone(),
+                                        content: text.text,
                                     },
-                                }
-                            }).collect();
-                            anthropic::MessageContent::Blocks { content: mapped_content_blocks }
-                        },
+                                })
+                                .collect();
+                            anthropic::MessageContent::Blocks {
+                                content: mapped_content_blocks,
+                            }
+                        }
                     };
                     let mapped_message = anthropic::Message {
                         role: anthropic::Role::User,
@@ -378,9 +361,10 @@ impl
                     mapped_messages.push(mapped_message);
                 }
                 openai::ChatCompletionRequestMessage::Function(message) => {
-                    let Some(tool) = tools.as_ref().and_then(|tools| {
-                        tools.iter().find(|tool| tool.name == message.name)
-                    }) else {
+                    let Some(tool) = tools
+                        .as_ref()
+                        .and_then(|tools| tools.iter().find(|tool| tool.name == message.name))
+                    else {
                         continue;
                     };
                     let mapped_content = anthropic::MessageContent::Blocks {
@@ -429,10 +413,7 @@ impl
     fn try_convert(
         &self,
         value: anthropic_ai_sdk::types::message::CreateMessageResponse,
-    ) -> std::result::Result<
-        async_openai::types::CreateChatCompletionResponse,
-        Self::Error,
-    > {
+    ) -> std::result::Result<async_openai::types::CreateChatCompletionResponse, Self::Error> {
         super::non_stream_response_interpreter::convert_anthropic_response(
             &self.non_stream_profile,
             value,
@@ -450,10 +431,7 @@ impl
         &self,
         resp_parts: &Parts,
         value: anthropic_ai_sdk::types::message::CreateMessageResponse,
-    ) -> std::result::Result<
-        async_openai::types::CreateChatCompletionResponse,
-        Self::Error,
-    > {
+    ) -> std::result::Result<async_openai::types::CreateChatCompletionResponse, Self::Error> {
         super::non_stream_response_interpreter::convert_anthropic_response_from_parts(
             resp_parts,
             &self.non_stream_profile,
@@ -474,9 +452,7 @@ impl
     fn try_convert_chunk(
         &self,
         value: anthropic_ai_sdk::types::message::StreamEvent,
-        anthropic_openai_usage: Option<
-            &crate::types::extensions::AnthropicOpenAiUsageCell,
-        >,
+        anthropic_openai_usage: Option<&crate::types::extensions::AnthropicOpenAiUsageCell>,
     ) -> std::result::Result<
         Option<async_openai::types::CreateChatCompletionStreamResponse>,
         Self::Error,
@@ -505,11 +481,7 @@ impl
                         anthropic::ContentBlock::Text { text, .. } => {
                             current_text_content.push_str(text);
                         }
-                        anthropic::ContentBlock::ToolUse {
-                            id,
-                            name,
-                            input,
-                        } => {
+                        anthropic::ContentBlock::ToolUse { id, name, input } => {
                             tool_calls.push(build_tool_call_chunk(
                                 u32::try_from(idx).unwrap_or(0),
                                 Some(id.clone()),
@@ -532,39 +504,30 @@ impl
                 }
 
                 let finish_reason = match message.stop_reason {
-                    Some(
-                        anthropic::StopReason::EndTurn
-                        | anthropic::StopReason::StopSequence,
-                    ) => Some(openai::FinishReason::Stop),
-                    Some(anthropic::StopReason::MaxTokens) => {
-                        Some(openai::FinishReason::Length)
+                    Some(anthropic::StopReason::EndTurn | anthropic::StopReason::StopSequence) => {
+                        Some(openai::FinishReason::Stop)
                     }
-                    Some(anthropic::StopReason::ToolUse) => {
-                        Some(openai::FinishReason::ToolCalls)
-                    }
+                    Some(anthropic::StopReason::MaxTokens) => Some(openai::FinishReason::Length),
+                    Some(anthropic::StopReason::ToolUse) => Some(openai::FinishReason::ToolCalls),
                     Some(anthropic::StopReason::Refusal) => {
                         Some(openai::FinishReason::ContentFilter)
                     }
                     None => None,
                 };
 
-                let refusal_content = if matches!(
-                    message.stop_reason,
-                    Some(anthropic::StopReason::Refusal)
-                ) {
-                    message.stop_sequence.clone() // stop_sequence is Option<String>
-                } else {
-                    None
-                };
+                let refusal_content =
+                    if matches!(message.stop_reason, Some(anthropic::StopReason::Refusal)) {
+                        message.stop_sequence.clone() // stop_sequence is Option<String>
+                    } else {
+                        None
+                    };
 
                 let choice = openai::ChatChoiceStream {
                     index: 0,
                     delta: openai::ChatCompletionStreamResponseDelta {
                         role: Some(match message.role {
                             anthropic::Role::User => openai::Role::User,
-                            anthropic::Role::Assistant => {
-                                openai::Role::Assistant
-                            }
+                            anthropic::Role::Assistant => openai::Role::Assistant,
                         }),
                         content: Some(current_text_content),
                         tool_calls: Some(tool_calls),
@@ -591,10 +554,7 @@ impl
                             u32::try_from(index).unwrap_or(0),
                             Some(id),
                             Some(name),
-                            Some(
-                                serde_json::to_string(&input)
-                                    .map_err(MapperError::SerdeError)?,
-                            ),
+                            Some(serde_json::to_string(&input).map_err(MapperError::SerdeError)?),
                         );
                         let choice = build_tool_choice(0, tool_call_chunk);
                         Ok(Some(build_stream_response(
@@ -610,10 +570,7 @@ impl
             anthropic::StreamEvent::ContentBlockDelta { index, delta } => {
                 match delta {
                     anthropic::ContentBlockDelta::TextDelta { text } => {
-                        let choice = build_text_choice(
-                            u32::try_from(index).unwrap_or(0),
-                            text,
-                        );
+                        let choice = build_text_choice(u32::try_from(index).unwrap_or(0), text);
                         Ok(Some(build_stream_response(
                             PLACEHOLDER_STREAM_ID.to_string(),
                             PLACEHOLDER_MODEL_NAME.to_string(),
@@ -621,19 +578,15 @@ impl
                             None,
                         )))
                     }
-                    anthropic::ContentBlockDelta::InputJsonDelta {
-                        partial_json,
-                    } => {
+                    anthropic::ContentBlockDelta::InputJsonDelta { partial_json } => {
                         let tool_call_chunk = build_tool_call_chunk(
                             u32::try_from(index).unwrap_or(0),
                             None,
                             None,
                             Some(partial_json),
                         );
-                        let choice = build_tool_choice(
-                            u32::try_from(index).unwrap_or(0),
-                            tool_call_chunk,
-                        );
+                        let choice =
+                            build_tool_choice(u32::try_from(index).unwrap_or(0), tool_call_chunk);
                         Ok(Some(build_stream_response(
                             PLACEHOLDER_STREAM_ID.to_string(),
                             PLACEHOLDER_MODEL_NAME.to_string(),
@@ -642,9 +595,7 @@ impl
                         )))
                     }
                     anthropic::ContentBlockDelta::ThinkingDelta { .. }
-                    | anthropic::ContentBlockDelta::SignatureDelta { .. } => {
-                        Ok(None)
-                    } // No direct OpenAI mapping for these deltas
+                    | anthropic::ContentBlockDelta::SignatureDelta { .. } => Ok(None), // No direct OpenAI mapping for these deltas
                 }
             }
             anthropic::StreamEvent::ContentBlockStop { index: _ }
@@ -654,8 +605,7 @@ impl
             anthropic::StreamEvent::MessageStop => {
                 let (id, model, usage_opt) = match anthropic_openai_usage {
                     Some(cell) => {
-                        let g =
-                            cell.lock().expect("anthropic stream usage lock");
+                        let g = cell.lock().expect("anthropic stream usage lock");
                         let id = if g.stream_message_id.is_empty() {
                             PLACEHOLDER_STREAM_ID.to_string()
                         } else {
@@ -684,16 +634,11 @@ impl
                         .on_message_delta(&usage);
                 }
                 let finish_reason = match delta.stop_reason {
-                    Some(
-                        anthropic::StopReason::EndTurn
-                        | anthropic::StopReason::StopSequence,
-                    ) => Some(openai::FinishReason::Stop),
-                    Some(anthropic::StopReason::MaxTokens) => {
-                        Some(openai::FinishReason::Length)
+                    Some(anthropic::StopReason::EndTurn | anthropic::StopReason::StopSequence) => {
+                        Some(openai::FinishReason::Stop)
                     }
-                    Some(anthropic::StopReason::ToolUse) => {
-                        Some(openai::FinishReason::ToolCalls)
-                    }
+                    Some(anthropic::StopReason::MaxTokens) => Some(openai::FinishReason::Length),
+                    Some(anthropic::StopReason::ToolUse) => Some(openai::FinishReason::ToolCalls),
                     Some(anthropic::StopReason::Refusal) => {
                         Some(openai::FinishReason::ContentFilter)
                     }
@@ -735,10 +680,7 @@ impl
     fn try_convert(
         &self,
         mut value: anthropic_ai_sdk::types::message::CreateMessageParams,
-    ) -> Result<
-        anthropic_ai_sdk::types::message::CreateMessageParams,
-        Self::Error,
-    > {
+    ) -> Result<anthropic_ai_sdk::types::message::CreateMessageParams, Self::Error> {
         let source_model = ModelId::from_str(&value.model)?;
         let target_model = self
             .model_mapper
@@ -761,10 +703,7 @@ impl
     fn try_convert(
         &self,
         value: anthropic_ai_sdk::types::message::CreateMessageResponse,
-    ) -> Result<
-        anthropic_ai_sdk::types::message::CreateMessageResponse,
-        Self::Error,
-    > {
+    ) -> Result<anthropic_ai_sdk::types::message::CreateMessageResponse, Self::Error> {
         Ok(value)
     }
 }
@@ -788,10 +727,7 @@ impl
         &self,
         _resp_parts: &Parts,
         value: crate::endpoints::anthropic::messages::AnthropicApiError,
-    ) -> Result<
-        crate::endpoints::anthropic::messages::AnthropicApiError,
-        Self::Error,
-    > {
+    ) -> Result<crate::endpoints::anthropic::messages::AnthropicApiError, Self::Error> {
         Ok(value)
     }
 }
@@ -807,13 +743,8 @@ impl
     fn try_convert_chunk(
         &self,
         value: anthropic_ai_sdk::types::message::StreamEvent,
-        _anthropic_openai_usage: Option<
-            &crate::types::extensions::AnthropicOpenAiUsageCell,
-        >,
-    ) -> Result<
-        Option<anthropic_ai_sdk::types::message::StreamEvent>,
-        Self::Error,
-    > {
+        _anthropic_openai_usage: Option<&crate::types::extensions::AnthropicOpenAiUsageCell>,
+    ) -> Result<Option<anthropic_ai_sdk::types::message::StreamEvent>, Self::Error> {
         Ok(Some(value))
     }
 }
@@ -831,8 +762,7 @@ impl
         value: crate::endpoints::anthropic::messages::AnthropicApiError,
     ) -> Result<async_openai::error::WrappedError, Self::Error> {
         let message = value.error.message;
-        let error =
-            super::openai_error_from_status(resp_parts.status, Some(message));
+        let error = super::openai_error_from_status(resp_parts.status, Some(message));
         Ok(error)
     }
 }
@@ -897,77 +827,63 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn anthropic_converter_does_not_reapply_non_stream_profile_to_tool_fields()
-     {
-        let mut non_stream_profile =
-            default_non_stream_profile(&InferenceProvider::Anthropic);
-        non_stream_profile.request.tool_choice_mode =
-            ToolChoiceMode::Unsupported;
+    async fn anthropic_converter_does_not_reapply_non_stream_profile_to_tool_fields() {
+        let mut non_stream_profile = default_non_stream_profile(&InferenceProvider::Anthropic);
+        non_stream_profile.request.tool_choice_mode = ToolChoiceMode::Unsupported;
         let converter = super::AnthropicConverter::new_with_profile(
             non_stream_profile,
             sample_model_mapper().await,
         );
-        let request: CreateChatCompletionRequest =
-            serde_json::from_value(json!({
-                "model": "anthropic/claude-sonnet-4-0",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": "hello"
+        let request: CreateChatCompletionRequest = serde_json::from_value(json!({
+            "model": "anthropic/claude-sonnet-4-0",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "hello"
+                }
+            ],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "lookup_weather",
+                        "description": "lookup weather"
                     }
-                ],
-                "tools": [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "lookup_weather",
-                            "description": "lookup weather"
-                        }
-                    }
-                ],
-                "tool_choice": "auto",
-                "parallel_tool_calls": true
-            }))
-            .expect("request should deserialize");
+                }
+            ],
+            "tool_choice": "auto",
+            "parallel_tool_calls": true
+        }))
+        .expect("request should deserialize");
 
-        let converted = crate::middleware::mapper::TryConvert::try_convert(
-            &converter, request,
-        )
-        .expect("conversion should succeed");
+        let converted = crate::middleware::mapper::TryConvert::try_convert(&converter, request)
+            .expect("conversion should succeed");
 
         assert!(converted.tools.is_some());
         assert!(converted.tool_choice.is_some());
     }
 
     #[tokio::test]
-    async fn anthropic_converter_does_not_reapply_non_stream_profile_to_reasoning_effort()
-     {
-        let mut non_stream_profile =
-            default_non_stream_profile(&InferenceProvider::Anthropic);
+    async fn anthropic_converter_does_not_reapply_non_stream_profile_to_reasoning_effort() {
+        let mut non_stream_profile = default_non_stream_profile(&InferenceProvider::Anthropic);
         non_stream_profile.request.reasoning_mode = ReasoningMode::Unsupported;
         let converter = super::AnthropicConverter::new_with_profile(
             non_stream_profile,
             sample_model_mapper().await,
         );
         let mut request = sample_request();
-        request.reasoning_effort =
-            Some(async_openai::types::ReasoningEffort::High);
+        request.reasoning_effort = Some(async_openai::types::ReasoningEffort::High);
 
-        let converted = crate::middleware::mapper::TryConvert::try_convert(
-            &converter, request,
-        )
-        .expect("conversion should succeed");
+        let converted = crate::middleware::mapper::TryConvert::try_convert(&converter, request)
+            .expect("conversion should succeed");
 
         assert!(converted.thinking.is_some());
     }
 
     #[tokio::test]
-    async fn anthropic_converter_does_not_reject_multimodal_without_request_engine()
-     {
-        let mut non_stream_profile =
-            default_non_stream_profile(&InferenceProvider::Anthropic);
-        non_stream_profile.request.multimodal_mode =
-            MultimodalMode::Unsupported;
+    async fn anthropic_converter_does_not_reject_multimodal_without_request_engine() {
+        let mut non_stream_profile = default_non_stream_profile(&InferenceProvider::Anthropic);
+        non_stream_profile.request.multimodal_mode = MultimodalMode::Unsupported;
         let converter = super::AnthropicConverter::new_with_profile(
             non_stream_profile,
             sample_model_mapper().await,
@@ -983,10 +899,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn anthropic_converter_can_be_built_from_metadata_rules_without_reapplying_them()
-     {
-        let capabilities =
-            ProviderCapabilities::for_provider(&InferenceProvider::Anthropic);
+    async fn anthropic_converter_can_be_built_from_metadata_rules_without_reapplying_them() {
+        let capabilities = ProviderCapabilities::for_provider(&InferenceProvider::Anthropic);
         let mut rules = default_provider_rules(&InferenceProvider::Anthropic);
         rules.request.tool_choice_mode = ToolChoiceMode::Unsupported;
         let converter = super::AnthropicConverter::new_with_metadata(
@@ -994,32 +908,29 @@ mod tests {
             rules,
             sample_model_mapper().await,
         );
-        let request: CreateChatCompletionRequest =
-            serde_json::from_value(json!({
-                "model": "anthropic/claude-sonnet-4-0",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": "hello"
+        let request: CreateChatCompletionRequest = serde_json::from_value(json!({
+            "model": "anthropic/claude-sonnet-4-0",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "hello"
+                }
+            ],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "lookup_weather",
+                        "description": "lookup weather"
                     }
-                ],
-                "tools": [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "lookup_weather",
-                            "description": "lookup weather"
-                        }
-                    }
-                ],
-                "tool_choice": "auto"
-            }))
-            .expect("request should deserialize");
+                }
+            ],
+            "tool_choice": "auto"
+        }))
+        .expect("request should deserialize");
 
-        let converted = crate::middleware::mapper::TryConvert::try_convert(
-            &converter, request,
-        )
-        .expect("conversion should succeed");
+        let converted = crate::middleware::mapper::TryConvert::try_convert(&converter, request)
+            .expect("conversion should succeed");
 
         assert!(converted.tools.is_some());
         assert!(converted.tool_choice.is_some());

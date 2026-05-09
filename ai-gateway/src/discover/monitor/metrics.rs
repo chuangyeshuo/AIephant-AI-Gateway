@@ -10,8 +10,7 @@ use crate::{
     metrics::RollingCounter, types::provider::InferenceProvider,
 };
 
-static CUSTOM_ENDPOINT_METRICS_DISCARD: OnceLock<EndpointMetrics> =
-    OnceLock::new();
+static CUSTOM_ENDPOINT_METRICS_DISCARD: OnceLock<EndpointMetrics> = OnceLock::new();
 
 #[inline]
 fn custom_endpoint_metrics_discard() -> &'static EndpointMetrics {
@@ -61,8 +60,7 @@ impl EndpointMetricsRegistry {
                 "Initializing endpoint metrics for provider"
             );
             for endpoint in provider.endpoints() {
-                endpoint_health_metrics
-                    .insert(endpoint, EndpointMetrics::default());
+                endpoint_health_metrics.insert(endpoint, EndpointMetrics::default());
             }
         }
         Self {
@@ -96,10 +94,7 @@ impl EndpointMetrics {
         self.remote_internal_error_count.incr();
     }
 
-    pub fn incr_for_stream_error(
-        &self,
-        stream_error: &reqwest_eventsource::Error,
-    ) {
+    pub fn incr_for_stream_error(&self, stream_error: &reqwest_eventsource::Error) {
         match stream_error {
             reqwest_eventsource::Error::StreamEnded => {
                 // happens in valid stream end cases, so we dont
@@ -142,8 +137,7 @@ mod tests {
 
     #[test]
     fn health_metrics_openai_compatible_custom_ok_when_registry_empty() {
-        let providers: ProvidersConfig =
-            serde_yml::from_str("{}").expect("empty providers map");
+        let providers: ProvidersConfig = serde_yml::from_str("{}").expect("empty providers map");
         let config = Config {
             providers,
             ..Default::default()

@@ -10,15 +10,12 @@ use url::Url;
 
 use crate::types::{model_id::ModelId, provider::InferenceProvider};
 
-const PROVIDERS_YAML: &str =
-    include_str!("../../config/embedded/providers.yaml");
+const PROVIDERS_YAML: &str = include_str!("../../config/embedded/providers.yaml");
 pub(crate) const DEFAULT_ANTHROPIC_VERSION: &str = "2023-06-01";
 
 /// How to send the upstream LLM API key on outbound requests (OpenAI-compatible
 /// providers only).
-#[derive(
-    Debug, Clone, Copy, Default, Deserialize, Serialize, Eq, PartialEq,
-)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum UpstreamAuthStyle {
     /// `Authorization: Bearer <secret>` (typical OpenAI-style APIs).
@@ -78,25 +75,17 @@ impl<'de> Deserialize<'de> for ProvidersConfig {
             type Value = ProvidersConfig;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str(
-                    "a map of inference providers to their configuration",
-                )
+                formatter.write_str("a map of inference providers to their configuration")
             }
 
-            fn visit_map<V>(
-                self,
-                mut map: V,
-            ) -> Result<ProvidersConfig, V::Error>
+            fn visit_map<V>(self, mut map: V) -> Result<ProvidersConfig, V::Error>
             where
                 V: MapAccess<'de>,
             {
                 let mut providers = IndexMap::new();
 
-                while let Some(provider) =
-                    map.next_key::<InferenceProvider>()?
-                {
-                    let raw_config: RawGlobalProviderConfig =
-                        map.next_value()?;
+                while let Some(provider) = map.next_key::<InferenceProvider>()? {
+                    let raw_config: RawGlobalProviderConfig = map.next_value()?;
 
                     // Convert model strings to ModelId using the provider
                     // context
@@ -104,16 +93,14 @@ impl<'de> Deserialize<'de> for ProvidersConfig {
                         .models
                         .into_iter()
                         .map(|model_str| {
-                            ModelId::from_str_and_provider(
-                                provider.clone(),
-                                &model_str,
-                            )
-                            .map_err(|e| {
-                                de::Error::custom(format!(
-                                    "Invalid model '{model_str}' for provider \
+                            ModelId::from_str_and_provider(provider.clone(), &model_str).map_err(
+                                |e| {
+                                    de::Error::custom(format!(
+                                        "Invalid model '{model_str}' for provider \
                                      {provider}: {e}"
-                                ))
-                            })
+                                    ))
+                                },
+                            )
                         })
                         .collect::<Result<IndexSet<_>, _>>()?;
 
@@ -149,9 +136,7 @@ impl Serialize for ProvidersConfig {
             #[serde(skip_serializing_if = "Option::is_none")]
             version: Option<String>,
             #[serde(default)]
-            #[serde(
-                skip_serializing_if = "skip_serializing_upstream_auth_bearer"
-            )]
+            #[serde(skip_serializing_if = "skip_serializing_upstream_auth_bearer")]
             upstream_auth: UpstreamAuthStyle,
         }
 
@@ -176,9 +161,7 @@ impl Serialize for ProvidersConfig {
     }
 }
 
-impl FromIterator<(InferenceProvider, GlobalProviderConfig)>
-    for ProvidersConfig
-{
+impl FromIterator<(InferenceProvider, GlobalProviderConfig)> for ProvidersConfig {
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = (InferenceProvider, GlobalProviderConfig)>,
@@ -204,8 +187,7 @@ mod tests {
     }
 
     #[test]
-    fn test_default_providers_config_includes_phase2_openai_compatible_named_providers()
-     {
+    fn test_default_providers_config_includes_phase2_openai_compatible_named_providers() {
         let default_config = ProvidersConfig::default();
 
         assert!(
@@ -267,8 +249,7 @@ anthropic:
         assert_eq!(openai_config.base_url.as_str(), "https://api.openai.com/");
 
         // Verify models are properly prefixed internally
-        let model_ids: Vec<ModelId> =
-            openai_config.models.clone().into_iter().collect();
+        let model_ids: Vec<ModelId> = openai_config.models.clone().into_iter().collect();
         assert_eq!(
             model_ids[0],
             ModelId::ModelIdWithVersion {
@@ -280,13 +261,10 @@ anthropic:
             }
         );
         // Check Anthropic provider
-        let anthropic_config =
-            config.get(&InferenceProvider::Anthropic).unwrap();
+        let anthropic_config = config.get(&InferenceProvider::Anthropic).unwrap();
         assert_eq!(anthropic_config.models.len(), 2);
-        let model_ids: Vec<ModelId> =
-            anthropic_config.models.clone().into_iter().collect();
-        let date =
-            chrono::NaiveDate::parse_from_str("20240229", "%Y%m%d").unwrap();
+        let model_ids: Vec<ModelId> = anthropic_config.models.clone().into_iter().collect();
+        let date = chrono::NaiveDate::parse_from_str("20240229", "%Y%m%d").unwrap();
         let naive_dt = date.and_hms_opt(0, 0, 0).unwrap();
         let date = chrono::Utc.from_utc_datetime(&naive_dt);
         assert_eq!(

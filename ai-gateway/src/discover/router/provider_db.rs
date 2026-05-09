@@ -21,8 +21,8 @@ use tracing::{error, info};
 
 use super::provider_db_config::build_from_db;
 use crate::{
-    app_state::AppState, discover::ServiceMap, error::init::InitError,
-    router::service::Router, types::router::RouterId,
+    app_state::AppState, discover::ServiceMap, error::init::InitError, router::service::Router,
+    types::router::RouterId,
 };
 
 pin_project! {
@@ -55,18 +55,14 @@ impl ProviderDbDiscovery {
             .get_all_providers_for_gateway()
             .await
             .map_err(|e| {
-            InitError::InitRouters(format!(
-                "failed to load providers from DB: {e}"
-            ))
-        })?;
+                InitError::InitRouters(format!("failed to load providers from DB: {e}"))
+            })?;
 
         let db_models = router_store
             .get_all_provider_models_for_gateway()
             .await
             .map_err(|e| {
-                InitError::InitRouters(format!(
-                    "failed to load provider_models from DB: {e}"
-                ))
+                InitError::InitRouters(format!("failed to load provider_models from DB: {e}"))
             })?;
 
         let (providers_config, router_configs, bare_model_expand) =
@@ -177,13 +173,9 @@ impl ProviderDbDiscovery {
 impl Stream for ProviderDbDiscovery {
     type Item = Change<RouterId, Router>;
 
-    fn poll_next(
-        self: Pin<&mut Self>,
-        ctx: &mut Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
-        if let Poll::Ready(Some(change)) = this.initial.as_mut().poll_next(ctx)
-        {
+        if let Poll::Ready(Some(change)) = this.initial.as_mut().poll_next(ctx) {
             return handle_change(change);
         }
         match this.events.as_mut().poll_next(ctx) {
@@ -194,9 +186,7 @@ impl Stream for ProviderDbDiscovery {
     }
 }
 
-fn handle_change(
-    change: Change<RouterId, Router>,
-) -> Poll<Option<Change<RouterId, Router>>> {
+fn handle_change(change: Change<RouterId, Router>) -> Poll<Option<Change<RouterId, Router>>> {
     match change {
         Change::Insert(key, service) => {
             tracing::debug!(%key, "ProviderDbDiscovery: router inserted");
