@@ -1,0 +1,14 @@
+{
+  "caseId": "l2-openai-chat-tool-calls",
+  "tier": "L2",
+  "intent": "Unified API OpenAI tool_calls compatibility baseline",
+  "profile": ["full"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer $ALEPHANT_CONTROL_PLANE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"Please call get_weather for city Beijing\"}],\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"description\":\"Get weather\",\"parameters\":{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\"}},\"required\":[\"city\"]}}}],\"tool_choice\":\"auto\",\"max_tokens\":64}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": ["/choices", "/choices/0/message"],
+      "arrayMinLength": { "/choices": 1 }
+    }
+  }
+}

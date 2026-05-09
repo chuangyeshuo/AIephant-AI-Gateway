@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-045",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_rekaai, unified model rekaai/reka-edge (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_rekaai\" -H \"Content-Type: application/json\" -d '{\"model\":\"rekaai/reka-edge\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-rekaai\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from rekaai/"
+      ]
+    }
+  }
+}

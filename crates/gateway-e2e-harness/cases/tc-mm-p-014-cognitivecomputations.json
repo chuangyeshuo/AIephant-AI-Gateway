@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-014",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_cognitivecomputations, unified model cognitivecomputations/dolphin-mistral-24b-venice-edition (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_cognitivecomputations\" -H \"Content-Type: application/json\" -d '{\"model\":\"cognitivecomputations/dolphin-mistral-24b-venice-edition\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-cognitivecomputations\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from cognitivecomputations/"
+      ]
+    }
+  }
+}

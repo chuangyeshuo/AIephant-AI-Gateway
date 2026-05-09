@@ -1,0 +1,10 @@
+{
+  "caseId": "l1-auth-invalid-bearer-unified",
+  "tier": "L1",
+  "intent": "Unified API with fake Bearer should fail auth or upstream verification",
+  "profile": ["gate", "full"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer xxxxxxxxx\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"auth-invalid\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": { "in": [400, 401, 403, 404, 422, 429, 500, 502, 503] }
+  }
+}

@@ -1,0 +1,42 @@
+target
+target-verify
+node_modules
+
+# Git worktrees (isolated workspaces)
+.worktrees/
+scripts/__pycache__/
+.wrangler
+.env
+.idea/*
+.DS_Store
+bindings/
+cloud.yaml
+
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraformrc
+terraform.rc
+crash.log
+crash.*.log
+*.tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+.vscode
+
+test-artifacts/runs/
+
+# Local developer noise
+.claude/settings.local.json
+.kiro/
+google
+scripts/provider_mock/.runtime/
+scripts/provider_mock/__pycache__/
+scripts/provider_mock/tests/__pycache__/
+crates/gateway-e2e-harness/scripts/__pycache__/
+

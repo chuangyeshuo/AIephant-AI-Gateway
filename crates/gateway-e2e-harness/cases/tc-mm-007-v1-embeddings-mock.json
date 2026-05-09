@@ -1,0 +1,17 @@
+{
+  "caseId": "MM-007",
+  "tier": "L2",
+  "intent": "multi_model_service: POST /v1/embeddings via gateway → mock OpenAI embeddings; VK legend_openai",
+  "profile": ["gate", "full"],
+  "requiredEnv": ["MULTI_MODEL_MOCK_E2E_ENABLE"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/embeddings\" -H \"Authorization: Bearer legend_openai\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/text-embedding-3-small\",\"input\":\"mm-007-embeddings\"}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": ["/data", "/data/0/embedding"]
+    },
+    "body": {
+      "contains": ["embedding"]
+    }
+  }
+}

@@ -1,0 +1,145 @@
+family-defaults:
+  openai-compatible:
+    family: openai-compatible
+    capabilities:
+      openai-compatible: true
+      supports-response-format: true
+      supports-tool-choice: true
+      supports-parallel-tool-calls: true
+      supports-thinking: false
+      supports-streaming-reasoning: false
+    request:
+      system-handling: first-class-field
+      message-content-mode: openai-style
+      tool-choice-mode: native
+      response-format-mode: passthrough
+      reasoning-mode: unsupported
+      multimodal-mode: openai-style
+    response:
+      content-mode: passthrough
+      tool-call-mapping-mode: native
+      finish-reason-mapping-mode: passthrough
+      usage-mapping-mode: passthrough
+    stream:
+      stream-mode: openai-sse
+  anthropic-messages:
+    family: anthropic-messages
+    capabilities:
+      openai-compatible: false
+      supports-response-format: false
+      supports-tool-choice: true
+      supports-parallel-tool-calls: true
+      supports-thinking: true
+      supports-streaming-reasoning: true
+    request:
+      system-handling: first-class-field
+      message-content-mode: anthropic-blocks
+      tool-choice-mode: native
+      response-format-mode: unsupported
+      reasoning-mode: map-to-thinking
+      multimodal-mode: content-blocks
+    response:
+      content-mode: anthropic-message-content
+      tool-call-mapping-mode: provider-specific-helper
+      finish-reason-mapping-mode: provider-specific-helper
+      usage-mapping-mode: provider-specific-helper
+    stream:
+      stream-mode: anthropic-events
+  bedrock-converse:
+    family: bedrock-converse
+    capabilities:
+      openai-compatible: false
+      supports-response-format: false
+      supports-tool-choice: true
+      supports-parallel-tool-calls: true
+      supports-thinking: true
+      supports-streaming-reasoning: false
+    request:
+      system-handling: ignore
+      message-content-mode: bedrock-content
+      tool-choice-mode: native
+      response-format-mode: unsupported
+      reasoning-mode: map-to-additional-fields
+      multimodal-mode: content-blocks
+    response:
+      content-mode: bedrock-output-message
+      tool-call-mapping-mode: provider-specific-helper
+      finish-reason-mapping-mode: provider-specific-helper
+      usage-mapping-mode: provider-specific-helper
+    stream:
+      stream-mode: bedrock-event-stream
+  gemini-open-ai-like:
+    family: gemini-open-ai-like
+    capabilities:
+      openai-compatible: false
+      supports-response-format: false
+      supports-tool-choice: true
+      supports-parallel-tool-calls: true
+      supports-thinking: true
+      supports-streaming-reasoning: false
+    request:
+      system-handling: first-class-field
+      message-content-mode: openai-style
+      tool-choice-mode: native
+      response-format-mode: unsupported
+      reasoning-mode: unsupported
+      multimodal-mode: openai-style
+    response:
+      content-mode: passthrough
+      tool-call-mapping-mode: native
+      finish-reason-mapping-mode: passthrough
+      usage-mapping-mode: passthrough
+    stream:
+      stream-mode: openai-sse
+  ollama-chat:
+    family: ollama-chat
+    capabilities:
+      openai-compatible: false
+      supports-response-format: false
+      supports-tool-choice: true
+      supports-parallel-tool-calls: false
+      supports-thinking: false
+      supports-streaming-reasoning: false
+    request:
+      system-handling: merge
+      message-content-mode: openai-style
+      tool-choice-mode: native
+      response-format-mode: unsupported
+      reasoning-mode: unsupported
+      multimodal-mode: openai-style
+    response:
+      content-mode: passthrough
+      tool-call-mapping-mode: native
+      finish-reason-mapping-mode: passthrough
+      usage-mapping-mode: passthrough
+    stream:
+      stream-mode: openai-sse
+provider-defaults:
+  openai:
+    family: openai-compatible
+    capabilities:
+      supports-thinking: true
+      supports-streaming-reasoning: true
+    request:
+      reasoning-mode: passthrough
+  anthropic:
+    family: anthropic-messages
+    capabilities:
+      supports-thinking: true
+      supports-streaming-reasoning: true
+    request:
+      reasoning-mode: map-to-thinking
+      multimodal-mode: content-blocks
+    response:
+      content-mode: anthropic-message-content
+      tool-call-mapping-mode: provider-specific-helper
+      finish-reason-mapping-mode: provider-specific-helper
+      usage-mapping-mode: provider-specific-helper
+    stream:
+      stream-mode: anthropic-events
+model-overrides:
+  deepseek/deepseek-reasoner:
+    capabilities:
+      supports-thinking: true
+    request:
+      reasoning-mode: passthrough

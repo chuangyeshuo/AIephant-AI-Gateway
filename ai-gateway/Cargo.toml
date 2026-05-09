@@ -1,0 +1,209 @@
+[package]
+name = "ai-gateway"
+version = { workspace = true }
+edition = { workspace = true }
+authors = { workspace = true }
+repository = "https://github.com/AlephantAI/ai-gateway"
+default-run = "ai-gateway"
+description = "A high-performance LLM proxy router."
+homepage = "https://docs.alephant.ai/ai-gateway"
+
+[dependencies]
+aes-gcm = "0.10"
+anthropic-ai-sdk = { workspace = true }
+sha2 = { workspace = true }
+async-openai = { workspace = true }
+async-trait = { workspace = true }
+axum-core = { workspace = true }
+axum-server = { workspace = true, features = ["tls-rustls"] }
+aws-sdk-bedrockruntime = { workspace = true }
+aws-smithy-types = { workspace = true }
+aws-sigv4 = { workspace = true }
+aws-smithy-runtime-api = { workspace = true }
+aws-credential-types = { workspace = true }
+backon = { workspace = true, features = ['tokio-sleep'] }
+base64 = { workspace = true }
+bytes = { workspace = true, features = ['serde'] }
+cfg-if = { workspace = true }
+chrono = { workspace = true, features = ['default', 'serde'] }
+clap = { workspace = true }
+compact_str = { workspace = true, features = ['serde'] }
+config = { workspace = true }
+derive_more = { workspace = true, features = ['as_ref', 'constructor', 'debug', 'deref', 'deref_mut', 'display', 'from', 'into', 'from_str'] }
+displaydoc = { workspace = true }
+dotenvy = { workspace = true }
+dynamic-router = { workspace = true }
+eventsource-stream = { workspace = true }
+flate2 = { workspace = true }
+futures = { workspace = true }
+governor = { workspace = true }
+heck = { workspace = true }
+http = { workspace = true }
+http-body = { workspace = true }
+http-body-util = { workspace = true }
+humantime-serde = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { workspace = true, features = ['server-auto', 'server-graceful', 'tokio'] }
+indexmap = { workspace = true, features = ['serde'] }
+infer = { workspace = true }
+ipnetwork = "0.20"
+isocountry = { workspace = true }
+jemallocator = { workspace = true }
+json-patch = { workspace = true }
+latency-router = { workspace = true }
+lru = "0.12"
+meltdown = { workspace = true }
+mime = { workspace = true }
+nonempty-collections = { workspace = true, features = ["serde"] }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+opentelemetry-system-metrics = { workspace = true }
+pin-project-lite = { workspace = true }
+prost = { workspace = true }
+rand = { workspace = true }
+redis = { workspace = true, features = ["tls-rustls", "tokio-rustls-comp", "tcp_nodelay", "tls-rustls-webpki-roots"] }
+regex = { workspace = true }
+reqwest = { workspace = true }
+reqwest-eventsource = { workspace = true }
+rustls = { workspace = true, features = ["ring"] }
+rust_decimal = { workspace = true, features = ["serde"] }
+rustc-hash = { workspace = true }
+rusty-s3 = { workspace = true }
+serde = { workspace = true, features = ['derive', 'rc'] }
+serde_json = { workspace = true }
+serde_path_to_error = { workspace = true }
+serde_with = { workspace = true }
+serde_yml = { workspace = true }
+serial_test = { workspace = true, optional = true }
+strum = { workspace = true, features = ["derive"] }
+stubr = { workspace = true, optional = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "uuid", "tls-rustls", "chrono", "json"] }
+telemetry = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = { workspace = true, features = ['sync'] }
+tokio-util = { workspace = true }
+tonic = { workspace = true }
+tower = { workspace = true, features = ['full'] }
+tower_governor = { workspace = true, features = [] }
+tower-http = { workspace = true, features = [ 'default', 'auth', 'catch-panic', 'add-extension', 'normalize-path', 'request-id', 'trace', 'util', 'sensitive-headers', 'compression-br', 'compression-deflate', 'compression-gzip', 'compression-zstd', 'decompression-br', 'decompression-deflate', 'decompression-gzip', 'decompression-zstd', 'cors' ] }
+tower-otel-http-metrics = { workspace = true }
+tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { workspace = true, features = ['env-filter', 'std'] }
+typed-builder = { workspace = true }
+url = { workspace = true, features = ['serde'] }
+utoipa = { workspace = true }
+uuid = { workspace = true, features = ["serde", "v7"] }
+weighted-balance = { workspace = true }
+workspace_root = { workspace = true, optional = true }
+alephant-llm-kv-cache = { workspace = true, default-features = false }
+tiktoken-rs = "0.11.0"
+
+[build-dependencies]
+tonic-build = { workspace = true }
+
+[dev-dependencies]
+cargo-husky = { workspace = true, features = ["user-hooks"] }
+pretty_assertions = { workspace = true }
+
+[features]
+default = []
+## Cloudflare KV LLM cache (`alephant-llm-kv-cache` / `cloudflare_kv` config).
+external = ["alephant-llm-kv-cache/external"]
+## Domestic placeholder backend (TiKV reserved).
+internal = ["alephant-llm-kv-cache/internal"]
+testing = ["dep:stubr", "dep:serial_test", "dep:workspace_root"]
+## Harness-based integration tests that require a running PostgreSQL database.
+integration = ["testing"]
+
+[lints]
+workspace = true
+
+[[test]]
+name = "auth"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "single_provider"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "load_balance"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "logger"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "weighted_balance"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "health_monitor"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "rate_limit_monitor"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "direct_proxy"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "unified_api"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "health_check"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "client_ip_rate_limit"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "gateway_in_flight_limit"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "error_format"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "retries"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "fallback_dispatcher_global_retry"
+required-features = ["external", "integration"]
+
+[[test]]
+name = "fallback_health_monitor_policy"
+required-features = ["external"]
+
+[[test]]
+name = "fallback_rate_limit_monitor_policy"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "fallback_workspace_providers_store"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "fallback_workspace_balancer_intersection"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "mapper_service_vk_policy"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "compat_mode"
+required-features = ["external", "testing"]
+
+[[test]]
+name = "fallback_observability_logs"
+required-features = ["external"]

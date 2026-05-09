@@ -1,0 +1,12 @@
+{
+  "caseId": "CFG-002",
+  "tier": "L0",
+  "intent": "CFG-002: invalid config at startup — cargo test / cli (manual)",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/health",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "manual"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "caseId": "OBS-007",
+  "tier": "L2",
+  "intent": "Log redaction: verify in log ingest (manual)",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"obs-007\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "manual"
+  ]
+}

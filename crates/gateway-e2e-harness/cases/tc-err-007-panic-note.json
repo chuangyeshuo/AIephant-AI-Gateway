@@ -1,0 +1,12 @@
+{
+  "caseId": "ERR-007",
+  "tier": "L1",
+  "intent": "CatchPanic: no single HTTP recipe (manual/fuzz)",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/health",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "manual"
+  ]
+}

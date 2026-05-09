@@ -1,0 +1,11 @@
+telemetry:
+  level: "info,ai_gateway=trace"
+  exporter: stdout
+
+alephant:
+  base-url: "http://localhost:8585"
+  features: none
+
+rate-limit-store:
+  type: redis
+  host-url: "redis://localhost:6379"

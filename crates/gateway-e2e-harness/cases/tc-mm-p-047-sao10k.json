@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-047",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_sao10k, unified model sao10k/sao10k/l3.1-70b-hanami-x1 (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_sao10k\" -H \"Content-Type: application/json\" -d '{\"model\":\"sao10k/sao10k/l3.1-70b-hanami-x1\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-sao10k\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from sao10k/"
+      ]
+    }
+  }
+}

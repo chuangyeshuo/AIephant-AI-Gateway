@@ -1,0 +1,25 @@
+{
+  "caseId": "OBS-002",
+  "tier": "L2",
+  "intent": "Observability off: requires features without observability (manual env)",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"obs-002\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": [
+    "manual"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "caseId": "IPRL-002",
+  "tier": "L2",
+  "intent": "Same as IPRL-001 but keyed by X-Forwarded-For first hop when peer is trusted: requires trusted-proxy-cidrs including 127.0.0.0/8 (curl from localhost) and same rate limit (1 rps). Prelude consumes one slot for XFF 198.51.100.30; main request same XFF → 429.",
+  "curlPrelude": [
+    "curl -X GET \"$GATEWAY_BASE/health\" -H \"X-Forwarded-For: 198.51.100.30\""
+  ],
+  "curl": "curl -X GET \"$GATEWAY_BASE/health\" -H \"X-Forwarded-For: 198.51.100.30\"",
+  "assertions": {
+    "httpStatus": 429,
+    "headers": {
+      "exists": ["retry-after"]
+    }
+  },
+  "profile": ["manual"]
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-057",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_xiaomi, unified model xiaomi/mimo-v2-flash (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_xiaomi\" -H \"Content-Type: application/json\" -d '{\"model\":\"xiaomi/mimo-v2-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-xiaomi\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from xiaomi/"
+      ]
+    }
+  }
+}

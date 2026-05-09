@@ -1,0 +1,29 @@
+# Aligned with workspace root: https://nexte.st/docs/configuration/
+# JUnit output path is relative; writes go under target/nextest/<profile>/...
+
+[store]
+# Default target/nextest is sufficient
+
+[profile.ci-gate]
+failure-output = "final"
+# Terminal stays PASS-first (avoids libtest default lines flooding output with 400+ tests);
+# per-test stdout/stderr goes to JUnit via `store-success-output`, aggregated into `gate.log` by `run-gate.sh`.
+success-output = "never"
+slow-timeout = { period = "120s", on-timeout = "fail" }
+
+[profile.ci-gate.junit]
+path = "junit.xml"
+report-name = "nextest-gate"
+store-failure-output = true
+store-success-output = true
+
+[profile.ci-nightly]
+failure-output = "final"
+test-threads = 1
+slow-timeout = { period = "300s", on-timeout = "fail" }
+
+[profile.ci-nightly.junit]
+path = "junit.xml"
+report-name = "nextest-nightly"
+store-failure-output = true
+store-success-output = false

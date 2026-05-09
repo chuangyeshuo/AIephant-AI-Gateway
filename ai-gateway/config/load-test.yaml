@@ -1,0 +1,24 @@
+providers:
+  openai:
+    base-url: "http://alephant-mock-server.internal:5150"
+  anthropic:
+    base-url: "http://alephant-mock-server.internal:5150"
+  gemini:
+    base-url: "http://alephant-mock-server.internal:5150"
+  bedrock:
+    base-url: "http://alephant-mock-server.internal:5150"
+
+s3:
+  endpoint: "http://alephant-mock-server.internal:5150"
+  bucket-name: "request-response-storage"
+  access-key: "minioadmin"
+  secret-key: "minioadmin"
+
+alephant:
+  base-url: "http://alephant-mock-server.internal:5150"
+  features: auth
+
+telemetry:
+  level: info
+  exporter: both
+  otlp-endpoint: "http://alephant-otel-collector.internal:4317/v1/metrics"

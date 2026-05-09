@@ -1,0 +1,14 @@
+{
+  "caseId": "l2-anthropic-chat-stream-template",
+  "tier": "L2",
+  "intent": "Unified API anthropic stream; expect SSE with data frames and [DONE] when upstream is configured",
+  "profile": ["full"],
+  "curl": "curl -N -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_anthropic\" -H \"Content-Type: application/json\" -d '{\"model\":\"anthropic/claude-3-haiku\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"anthropic-stream-template\"}],\"max_tokens\":32}'",
+  "assertions": {
+    "httpStatus": 200,
+    "sse": {
+      "dataFramesMin": 1,
+      "hasDone": true
+    }
+  }
+}

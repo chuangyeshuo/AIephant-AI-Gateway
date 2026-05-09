@@ -1,0 +1,17 @@
+[package]
+name = "no-cjk-rust-comments"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "no-cjk-rust-comments"
+path = "src/main.rs"
+
+[dependencies]
+regex = { workspace = true }
+# crates.io `rustc_lexer` is 0.1.x; use rust-analyzer's rustc shim for `tokenize` + `FrontmatterAllowed`.
+rustc_lexer = { workspace = true }

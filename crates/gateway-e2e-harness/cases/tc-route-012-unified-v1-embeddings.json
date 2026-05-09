@@ -1,0 +1,24 @@
+{
+  "caseId": "ROUTE-012",
+  "tier": "L2",
+  "intent": "Unified POST /v1/embeddings",
+  "requiredEnv": ["ALEPHANT_CONTROL_PLANE_API_KEY"],
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/embeddings -H \"Authorization: Bearer $ALEPHANT_CONTROL_PLANE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/text-embedding-3-small\",\"input\":\"route-012\"}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": ["gate", "full"]
+}

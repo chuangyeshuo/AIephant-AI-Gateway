@@ -1,0 +1,19 @@
+{
+  "caseId": "ROUTE-005",
+  "tier": "L1",
+  "intent": "Unknown path",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/definitely-not-a-route-xyz-12345/ping",
+  "assertions": {
+    "httpStatus": 404,
+    "json": {
+      "pathExists": [
+        "/error",
+        "/error/message"
+      ]
+    }
+  },
+  "profile": [
+    "gate",
+    "full"
+  ]
+}

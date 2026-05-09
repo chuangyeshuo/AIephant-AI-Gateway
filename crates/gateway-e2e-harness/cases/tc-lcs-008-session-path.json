@@ -1,0 +1,12 @@
+{
+  "caseId": "LCS-008",
+  "tier": "L2",
+  "intent": "Alephant session path without leading slash",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Alephant-Session-Id: lcs008\" -H \"Alephant-Session-Path: a/b\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"lcs-008\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "full"
+  ]
+}

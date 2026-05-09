@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package policy.v1;
+
+option go_package = "github.com/AlephantAI/policy-service/gen/proto/policy/v1;policyv1";
+
+// EvaluateRequest mirrors internal/evaluate.EvaluateRequest (Who / What / Where).
+message EvaluateRequest {
+  string workspace_id = 1;
+  string request_id = 2;
+  string model = 3;
+  string provider = 4;
+  string virtual_key_id = 5;
+  string client_ip = 6;
+  // Locale for reason_message: "en" (default) or "zh".
+  string locale = 7;
+  // Optional department identifier for strategies (e.g. department key access); may override or supplement VK snapshot.
+  string department_id = 8;
+  // When workspace Redis flag `policy:piicache:{workspace_id}` is the string
+  // `true`, the gateway fills this with the inbound HTTP body (byte-truncated).
+  bytes body = 9;
+  // Heuristic estimated input token count (chat completions); 0 if unknown.
+  uint32 estimated_input_tokens = 10;
+  // Micro-USD (1e-6 USD): estimated_input_tokens * prompt_price_per_token_usd * 1e6.
+  // `prompt_price` matches ModelInfo.prompt in catalog (USD per token).
+  // USD = estimated_input_usd / 1e6. 0 when tokens unknown or price lookup misses.
+  double estimated_input_usd = 11;
+  map<string, string> headers = 12;
+}
+
+// EvaluateResponse mirrors internal/evaluate.EvaluateResponse.
+message EvaluateResponse {
+  bool allowed = 1;
+  string reason = 2;
+  string blocked_by = 3;
+  string route_hint = 4;
+  int64 snapshot_revision = 5;
+  // User-facing explanation for reason (dictionary-backed); default English when locale is en or unset.
+  string reason_message = 6;
+  bytes out_body = 7;
+  string change_model = 8;
+}
+
+service PolicyService {
+  rpc Evaluate(EvaluateRequest) returns (EvaluateResponse);
+}

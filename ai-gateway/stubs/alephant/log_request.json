@@ -1,0 +1,10 @@
+{
+  "id":"success:alephant:log_request",
+  "request":{
+    "method":"POST",
+    "url":"/v1/log/request"
+  },
+  "response":{
+    "status":200
+  }
+}

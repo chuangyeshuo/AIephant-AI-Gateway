@@ -1,0 +1,12 @@
+{
+  "caseId": "ERR-008",
+  "tier": "L1",
+  "intent": "Graceful shutdown — integration (manual)",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/health",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "manual"
+  ]
+}

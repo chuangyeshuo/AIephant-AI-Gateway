@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-029",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_meta-llama, unified model meta-llama/Llama-3.3-70B-Instruct (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_meta-llama\" -H \"Content-Type: application/json\" -d '{\"model\":\"meta-llama/Llama-3.3-70B-Instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-meta-llama\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from meta-llama/"
+      ]
+    }
+  }
+}

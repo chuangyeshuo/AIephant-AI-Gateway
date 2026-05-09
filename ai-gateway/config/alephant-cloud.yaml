@@ -1,0 +1,77 @@
+telemetry:
+  level: "info,ai_gateway=trace"
+  format: "compact"
+  exporter: stdout
+
+alephant:
+  base-url: "http://alephantai-logs-collector.dev.svc.cluster.local:8585"
+  features: all
+
+# Object storage (S3-compatible API). `endpoint` / `access-key` / `secret-key` may be set only via
+# `AI_GATEWAY__S3__ENDPOINT`, `AI_GATEWAY__S3__ACCESS_KEY`, `AI_GATEWAY__S3__SECRET_KEY`; env wins if both are set.
+s3:
+  endpoint: "http://127.0.0.1:9000"
+  bucket-name: "request-response-storage"
+  access-key: "replace-me"
+  secret-key: "replace-me"
+
+# Request logging: http | redis (default redis). `log-queue-redis-url` is also used for
+# workspace concurrency and catalog EXISTS (see AppRedis). For secrets in log-queue-redis-url,
+# use env AI_GATEWAY__REQUEST_LOG__LOG_QUEUE_REDIS_URL.
+request-log:
+  transport: redis
+  request-response-stream-key: lc:stream:alephant-request-response-logs
+
+policy:
+  enabled: true
+  grpc-endpoint: "http://alephantai-policy-service.dev.svc.cluster.local:9090"
+  on-unavailable: deny
+
+# LLM KV (`--features external`): inject `api-token` via env in production.
+cloudflare-kv:
+  api-base: "https://api.cloudflare.com/client/v4"
+  account-id: "replace-me"
+  namespace-id: "replace-me"
+  api-token: "replace-me"
+
+# LLM response KV (`--features internal`): TiKV Raw KV; Cloudflare KV is selected by feature flag.
+# `pd-endpoints` lists PD addresses; replace with cluster PDs at deploy time or inject via `AI_GATEWAY__TIKV_KV__*`.
+# TLS (optional): set `ca-cert-path` (PEM) in YAML or `AI_GATEWAY__TIKV_KV__CA_CERT_PATH`; env wins if both are set.
+# Without CA, connections are non-TLS. See design spec section 4 for underlying `tikv-client` behavior.
+tikv-kv:
+  pd-endpoints:
+    - "replace-me-pd:2379"
+  # PEM; keep null for non-TLS. Omitting this key is equivalent to null. Env `AI_GATEWAY__TIKV_KV__CA_CERT_PATH` wins if both are set.
+  ca-cert-path: null
+
+# Semantic cache (Qdrant + embeddings): reuse results on semantic near-miss (after LLM KV miss).
+# Env `AI_GATEWAY__SEMANTIC_CACHE__*` wins if both YAML and env are set.
+semantic-cache:
+  default-threshold-millis: 900
+  default-ttl-seconds: 3600
+  qdrant:
+    url: "http://127.0.0.1:6333"
+
+# Global rate limit: max HTTP requests per client IP in a sliding 1s window.
+# Env `AI_GATEWAY__GLOBAL__CLIENT_IP_RATE_LIMIT__*` wins if both are set.
+# `trusted-proxy-cidrs`: parse first hop of `X-Forwarded-For` only when the direct peer is in these CIDRs;
+# set according to your cluster in front of Ingress/LB.
+# `backend: redis` reuses AppRedis from request-log / workspace; falls back to memory with error logs if unset or ping fails.
+global:
+  client-ip-rate-limit:
+    enabled: true
+    requests-per-second: 10
+    backend: redis
+    # Deploy: fill in your Ingress / LB pod CIDR so the gateway resolves
+    # the real client IP from X-Forwarded-For instead of seeing all
+    # requests as coming from the proxy IP.
+    trusted-proxy-cidrs: []
+    redis-key-prefix: "gw:iprl:"
+  # Hard cap on concurrent in-flight HTTP requests for the whole gateway (not per client IP);
+  # independent of `client-ip-rate-limit` (sliding 1s RPS). Env `AI_GATEWAY__GLOBAL__GATEWAY_IN_FLIGHT_LIMIT__*` wins if both are set.
+  # Semantics: semaphore-style counter; `backend: redis` reuses the same AppRedis as client-ip-rate-limit; `redis-key-prefix` must differ from `gw:iprl:`.
+  gateway-in-flight-limit:
+    enabled: true
+    max-concurrent: 10000
+    backend: redis
+    redis-key-prefix: "gw:gifl:"

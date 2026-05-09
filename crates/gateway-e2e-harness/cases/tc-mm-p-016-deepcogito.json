@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-016",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_deepcogito, unified model deepcogito/deepcogito/cogito-v2.1-671b (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_deepcogito\" -H \"Content-Type: application/json\" -d '{\"model\":\"deepcogito/deepcogito/cogito-v2.1-671b\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-deepcogito\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from deepcogito/"
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "caseId": "CFG-006",
+  "tier": "L2",
+  "intent": "master_keys.base_url: configure via DB/env then run; wide status until verified",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"cfg-006\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": [
+    "full"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "caseId": "MM-009",
+  "tier": "L2",
+  "intent": "multi_model_service: POST /v1/responses → mock Responses API shape; VK legend_openai",
+  "profile": ["gate", "full"],
+  "requiredEnv": ["MULTI_MODEL_MOCK_E2E_ENABLE"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/responses\" -H \"Authorization: Bearer legend_openai\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"input\":\"mm-009-responses\",\"max_output_tokens\":16}'",
+  "assertions": {
+    "httpStatus": 200,
+    "body": {
+      "contains": ["Mock response from openai"]
+    }
+  }
+}

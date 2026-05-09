@@ -1,0 +1,16 @@
+{
+  "caseId": "SC-001",
+  "tier": "L4",
+  "intent": "TIER: C-probe; may not 200; semantic cache request headers + unified /ai, no HIT required",
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -H \"Alephant-Cache-Enabled: true\" -H \"Alephant-Embeddings-Key: $OPENAI_API_KEY\" -H \"Alephant-Embeddings-Model: $EMBEDDING_MODEL_NAME\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"sc-001-semantic-probe $HARNESS_E2E_RUN_TOKEN\"}],\"max_tokens\":4}'",
+  "requiredEnv": [
+    "OPENAI_API_KEY",
+    "EMBEDDING_MODEL_NAME"
+  ],
+  "assertions": {
+    "httpStatus": {
+      "in": [200, 400, 401, 403, 404, 422, 429, 500, 502, 503]
+    }
+  },
+  "profile": ["full"]
+}

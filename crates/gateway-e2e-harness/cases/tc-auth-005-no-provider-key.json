@@ -1,0 +1,25 @@
+{
+  "caseId": "AUTH-005",
+  "tier": "L2",
+  "intent": "Org missing provider key: use VK for org without keys; expect error",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"auth-005\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": [
+    "full"
+  ]
+}

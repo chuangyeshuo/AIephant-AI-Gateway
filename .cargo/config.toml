@@ -1,0 +1,11 @@
+[alias]
+# Full Clippy matrix: see `scripts/ci-clippy.sh` (cargo aliases cannot reliably chain multiple `&&` groups).
+ci-clippy = "clippy -p ai-gateway --features external --all-targets -- -D warnings"
+int-test = "t --tests -F testing"
+all-int-test = "t --tests --all-features"
+rl = "run -- -c ./ai-gateway/config/local.yaml"
+rlc = "run -- -c ./ai-gateway/config/local-cloud.yaml"
+rlt = "run --release -- -c ./ai-gateway/config/load-test.yaml"
+
+[net]
+git-fetch-with-cli = true

@@ -1,0 +1,31 @@
+{
+  "id": "chatcmpl-deepseek-reasoner-tool-1",
+  "object": "chat.completion",
+  "created": 1748543700,
+  "model": "deepseek-reasoner",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_deepseek_reasoner_weather_1",
+            "type": "function",
+            "function": {
+              "name": "lookup_weather",
+              "arguments": "{\"city\":\"Paris\"}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 12,
+    "completion_tokens": 8,
+    "total_tokens": 20
+  }
+}

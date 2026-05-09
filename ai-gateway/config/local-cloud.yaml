@@ -1,0 +1,65 @@
+telemetry:
+  level: "info,ai_gateway=trace"
+  format: "compact"
+  exporter: stdout
+
+alephant:
+  base-url: "http://alephantai-logs-collector.dev.svc.cluster.local:8585"
+  features: all
+
+# Object storage (S3-compatible API). For local integration, adjust `endpoint`;
+# credentials may also be overridden with AI_GATEWAY__S3__ACCESS_KEY / AI_GATEWAY__S3__SECRET_KEY.
+s3:
+  endpoint: "http://127.0.0.1:9000"
+  bucket-name: "request-response-storage"
+  access-key: "minioadmin"
+  secret-key: "minioadmin"
+
+# Request logging: http | redis (default redis). `log-queue-redis-url` is also used for
+# workspace concurrency and catalog EXISTS (see AppRedis). For secrets in log-queue-redis-url,
+# use env AI_GATEWAY__REQUEST_LOG__LOG_QUEUE_REDIS_URL.
+request-log:
+  transport: redis
+  request-response-stream-key: lc:stream:alephant-request-response-logs
+
+policy:
+  enabled: true
+  grpc-endpoint: "http://alephantai-policy-service.dev.svc.cluster.local:9090"
+  on-unavailable: deny
+
+cloudflare-kv:
+  api-base: "https://api.cloudflare.com/client/v4"
+  account-id: "local-dev"
+  namespace-id: "local-dev"
+  api-token: "local-dev-placeholder"
+
+# LLM response KV (`--features internal`): TiKV Raw KV; if unset, in-memory stub.
+# PD is the Placement Driver address (not TiKV/TiFlash ports); TiDB Playground is often 127.0.0.1:2379.
+# This block can be overridden entirely with `AI_GATEWAY__TIKV_KV__*` env vars.
+# TLS (optional): `ca-cert-path` (PEM) or `AI_GATEWAY__TIKV_KV__CA_CERT_PATH`; env wins if both are set.
+tikv-kv:
+  pd-endpoints:
+    - "127.0.0.1:2379"
+  # PEM; keep null when TLS is disabled locally. Env `AI_GATEWAY__TIKV_KV__CA_CERT_PATH` wins if both are set.
+  ca-cert-path: null
+
+# Semantic cache (Qdrant + embeddings): reuse results on semantic near-miss (after LLM KV miss).
+# Env `AI_GATEWAY__SEMANTIC_CACHE__*` wins if both YAML and env are set.
+semantic-cache:
+  default-threshold-millis: 900
+  default-ttl-seconds: 3600
+  qdrant:
+    url: "http://127.0.0.1:6333"
+
+# Global rate limit: max HTTP requests per client IP in a sliding 1s window (same shape as
+# `alephant-cloud.yaml` for local parity). Env `AI_GATEWAY__GLOBAL__CLIENT_IP_RATE_LIMIT__*` wins if both are set.
+# `trusted-proxy-cidrs`: parse first hop of `X-Forwarded-For` only when the direct peer is in these CIDRs;
+# fill as needed when traffic goes through a local proxy.
+# `backend: redis` reuses AppRedis from request-log / workspace; falls back to memory with error logs if unset or ping fails.
+global:
+  client-ip-rate-limit:
+    enabled: true
+    requests-per-second: 10
+    backend: redis
+    trusted-proxy-cidrs: []
+    redis-key-prefix: "gw:iprl:"

@@ -1,0 +1,14 @@
+{
+  "caseId": "MM-010",
+  "tier": "L2",
+  "intent": "multi_model_service: POST /v1/images/generations → mock; revised_prompt contains Mock image generation",
+  "profile": ["gate", "full"],
+  "requiredEnv": ["MULTI_MODEL_MOCK_E2E_ENABLE"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/images/generations\" -H \"Authorization: Bearer legend_openai\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/dall-e-3\",\"prompt\":\"mm-010 icon\",\"n\":1,\"size\":\"1024x1024\"}'",
+  "assertions": {
+    "httpStatus": 200,
+    "body": {
+      "contains": ["Mock image generation for openai"]
+    }
+  }
+}

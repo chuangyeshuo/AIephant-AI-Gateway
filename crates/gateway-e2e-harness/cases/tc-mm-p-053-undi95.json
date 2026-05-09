@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-053",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_undi95, unified model undi95/undi95/remm-slerp-l2-13b (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_undi95\" -H \"Content-Type: application/json\" -d '{\"model\":\"undi95/undi95/remm-slerp-l2-13b\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-undi95\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from undi95/"
+      ]
+    }
+  }
+}

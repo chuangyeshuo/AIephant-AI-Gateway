@@ -1,0 +1,18 @@
+{
+  "caseId": "MM-002",
+  "tier": "L2",
+  "intent": "multi_model_service: gateway → mock OpenAI-compat chat (SSE); VK legend_openai",
+  "profile": ["gate", "full"],
+  "requiredEnv": ["MULTI_MODEL_MOCK_E2E_ENABLE"],
+  "curl": "curl -N -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_openai\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"mm-002-openai-stream\"}],\"max_tokens\":32}'",
+  "assertions": {
+    "httpStatus": 200,
+    "body": {
+      "contains": ["Mock", "chat.completion.chunk"]
+    },
+    "sse": {
+      "dataFramesMin": 3,
+      "hasDone": true
+    }
+  }
+}

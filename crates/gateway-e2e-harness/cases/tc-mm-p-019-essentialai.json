@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-019",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_essentialai, unified model essentialai/rnj-1-instruct (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_essentialai\" -H \"Content-Type: application/json\" -d '{\"model\":\"essentialai/rnj-1-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-essentialai\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from essentialai/"
+      ]
+    }
+  }
+}

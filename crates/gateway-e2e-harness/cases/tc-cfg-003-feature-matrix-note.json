@@ -1,0 +1,12 @@
+{
+  "caseId": "CFG-003",
+  "tier": "L0",
+  "intent": "CFG-003: external/internal feature mutual exclusion — build-time (manual)",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/health",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "manual"
+  ]
+}

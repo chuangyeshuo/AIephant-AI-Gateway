@@ -1,0 +1,42 @@
+{
+  "authorization": "REPLACE_WITH_SAME_AS_BEARER_OR_BODY",
+  "alephantMeta": {
+    "omitRequestLog": false,
+    "omitResponseLog": false,
+    "webhookEnabled": false,
+    "gatewayDeploymentTarget": "sidecar",
+    "gatewayModel": "gpt-4o-mini",
+    "gatewayProvider": "openai",
+    "providerModelId": "gpt-4o-mini",
+    "isPassthroughBilling": true,
+    "aiGatewayBodyMapping": "NO_MAPPING"
+  },
+  "log": {
+    "request": {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "userId": "00000000-0000-4000-8000-000000000002",
+      "workspaceId": "00000000-0000-4000-8000-000000000003",
+      "properties": {},
+      "targetUrl": "https://api.openai.com/v1/chat/completions",
+      "provider": "OPENAI",
+      "bodySize": 12,
+      "path": "/v1/chat/completions",
+      "requestCreatedAt": "2026-03-24T12:00:00.000Z",
+      "isStream": false,
+      "body": "{\"hello\":1}",
+      "bodyTtlDays": 90
+    },
+    "response": {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "status": 200,
+      "bodySize": 18,
+      "delayMs": 150,
+      "timeToFirstToken": 0,
+      "responseCreatedAt": "2026-03-24T12:00:00.100Z",
+      "body": "{\"ok\":true}",
+      "model": "gpt-4o-mini",
+      "promptTokens": 1,
+      "completionTokens": 2
+    }
+  }
+}

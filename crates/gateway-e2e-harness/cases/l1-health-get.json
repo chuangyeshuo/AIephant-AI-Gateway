@@ -1,0 +1,10 @@
+{
+  "caseId": "l1-health-get",
+  "tier": "L1",
+  "intent": "GET /health should always return 200 without auth",
+  "profile": ["full"],
+  "curl": "curl -X GET \"$GATEWAY_BASE/health\"",
+  "assertions": {
+    "httpStatus": 200
+  }
+}

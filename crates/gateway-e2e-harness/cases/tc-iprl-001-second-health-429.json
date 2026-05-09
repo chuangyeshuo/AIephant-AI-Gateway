@@ -1,0 +1,16 @@
+{
+  "caseId": "IPRL-001",
+  "tier": "L2",
+  "intent": "global client-ip-rate-limit (1 rps): curlPrelude sends one GET /health; main curl is the second same-IP request in the sliding 1s window → expect 429 and Retry-After. Requires gateway global.client-ip-rate-limit enabled=true, requests-per-second=1. profile manual so default gate/full skips when limiter is off.",
+  "curlPrelude": [
+    "curl -X GET \"$GATEWAY_BASE/health\""
+  ],
+  "curl": "curl -X GET \"$GATEWAY_BASE/health\"",
+  "assertions": {
+    "httpStatus": 429,
+    "headers": {
+      "exists": ["retry-after"]
+    }
+  },
+  "profile": ["manual"]
+}

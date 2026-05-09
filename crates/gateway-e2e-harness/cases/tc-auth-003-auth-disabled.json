@@ -1,0 +1,25 @@
+{
+  "caseId": "AUTH-003",
+  "tier": "L2",
+  "intent": "Requires alephant.features=none (auth off). Isolated env only; skipped in gate/full by profile.",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"auth-003\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": [
+    "manual"
+  ]
+}

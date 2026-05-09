@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-005",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_allenai, unified model allenai/allenai/olmo-3.1-32b-instruct (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_allenai\" -H \"Content-Type: application/json\" -d '{\"model\":\"allenai/allenai/olmo-3.1-32b-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-allenai\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from allenai/"
+      ]
+    }
+  }
+}

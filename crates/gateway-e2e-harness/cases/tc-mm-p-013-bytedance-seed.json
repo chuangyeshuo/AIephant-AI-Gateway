@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-013",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_bytedance-seed, unified model bytedance-seed/seed-2.0-lite (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_bytedance-seed\" -H \"Content-Type: application/json\" -d '{\"model\":\"bytedance-seed/seed-2.0-lite\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-bytedance-seed\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from bytedance-seed/"
+      ]
+    }
+  }
+}

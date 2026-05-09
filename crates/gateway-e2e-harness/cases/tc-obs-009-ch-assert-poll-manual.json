@@ -1,0 +1,28 @@
+{
+  "caseId": "OBS-009",
+  "tier": "L2",
+  "intent": "ClickHouse assertPoll manual plumbing: verifies ch.assertPoll executes clickhouse_query + assert_row against a reachable ClickHouse endpoint; does not assert gateway log schema",
+  "curl": "curl -f \"$GATEWAY_BASE/health\"",
+  "requiredEnv": [
+    "CLICKHOUSE_HTTP_URL"
+  ],
+  "assertions": {
+    "httpStatus": 200
+  },
+  "ch": {
+    "assertPoll": {},
+    "steps": [
+      {
+        "type": "clickhouse_query",
+        "sql": "SELECT 1 AS ok FORMAT JSONEachRow"
+      },
+      {
+        "type": "assert_row",
+        "match": {
+          "ok": 1
+        }
+      }
+    ]
+  },
+  "profile": ["manual"]
+}

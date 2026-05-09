@@ -1,0 +1,17 @@
+{
+  "caseId": "MM-008",
+  "tier": "L2",
+  "intent": "multi_model_service: POST /v1/completions (legacy) → mock; body contains Mock completion",
+  "profile": ["gate", "full"],
+  "requiredEnv": ["MULTI_MODEL_MOCK_E2E_ENABLE"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/completions\" -H \"Authorization: Bearer legend_openai\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"prompt\":\"mm-008-completion\",\"max_tokens\":16}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": ["/choices", "/choices/0/text"]
+    },
+    "body": {
+      "contains": ["Mock completion from openai"]
+    }
+  }
+}

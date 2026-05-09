@@ -1,0 +1,499 @@
+ai21:
+  models:
+    - "jamba-large-1.7"
+  base-url: https://api.ai21.com/studio/v1/
+
+aion-labs:
+  models:
+    - "aion-1.0"
+    - "aion-1.0-mini"
+    - "aion-2.0"
+    - "aion-rp-llama-3.1-8b"
+  base-url: https://api.aion-labs.ai/v1
+
+alibaba:
+  models:
+    - "tongyi-deepresearch-30b-a3b"
+  base-url: https://dashscope-intl.aliyuncs.com/compatible-mode/v1/
+
+bedrock:
+  models:
+    - "amazon.nova-2-lite-v1:0"
+    - "amazon.nova-lite-v1:0"
+    - "amazon.nova-micro-v1:0"
+    - "amazon.nova-premier-v1:0"
+    - "amazon.nova-pro-v1:0"
+  base-url: https://bedrock-runtime.us-east-1.amazonaws.com/
+
+anthropic:
+  models:
+    - "claude-3.5-haiku"
+    - "claude-3-5-sonnet-20241022"
+    - "claude-3.7-sonnet"
+    - "claude-3.7-sonnet:thinking"
+    - "claude-3-haiku"
+    - "claude-haiku-4.5"
+    - "claude-haiku-latest"
+    - "claude-opus-4"
+    - "claude-opus-4.1"
+    - "claude-opus-4.5"
+    - "claude-opus-4.6"
+    - "claude-opus-4.6-fast"
+    - "claude-opus-4.7"
+    - "claude-opus-latest"
+    - "claude-sonnet-4"
+    - "claude-sonnet-4.5"
+    - "claude-sonnet-4.6"
+    - "claude-sonnet-latest"
+  base-url: https://api.anthropic.com
+  version: "2023-06-01"
+
+arcee-ai:
+  models:
+    - "coder-large"
+    - "maestro-reasoning"
+    - "spotlight"
+    - "trinity-large-preview"
+    - "trinity-large-thinking"
+    - "trinity-mini"
+    - "virtuoso-large"
+  base-url: https://api.arcee.ai/v1
+
+baidu:
+  models:
+    - "ernie-4.5-21b-a3b"
+    - "ernie-4.5-21b-a3b-thinking"
+    - "ernie-4.5-300b-a47b"
+    - "ernie-4.5-vl-28b-a3b"
+    - "ernie-4.5-vl-424b-a47b"
+  base-url: https://qianfan.baidubce.com/v2/
+
+bytedance:
+  models:
+    - "ui-tars-1.5-7b"
+  base-url: https://ark.cn-beijing.volces.com/api/v3/
+
+bytedance-seed:
+  models:
+    - "seed-1.6"
+    - "seed-1.6-flash"
+    - "seed-2.0-lite"
+    - "seed-2.0-mini"
+  base-url: https://ark.cn-beijing.volces.com/api/v3/
+
+cognitivecomputations:
+  models: []
+  base-url: https://api.venice.ai/api/v1/
+
+cohere:
+  models:
+    - "command-a"
+    - "command-r-08-2024"
+    - "command-r7b-12-2024"
+    - "command-r-plus-08-2024"
+  base-url: https://api.cohere.com/
+
+deepcogito:
+  models:
+    - "cogito-v2.1-671b"
+  base-url: https://openrouter.ai/api/v1/
+
+deepseek:
+  models:
+    - "deepseek-chat"
+    - "deepseek-chat-v3-0324"
+    - "deepseek-chat-v3.1"
+    - "deepseek-r1"
+    - "deepseek-r1-0528"
+    - "deepseek-r1-distill-llama-70b"
+    - "deepseek-r1-distill-qwen-32b"
+    - "deepseek-v3.1-terminus"
+    - "deepseek-v3.2"
+    - "deepseek-v3.2-exp"
+    - "deepseek-v3.2-speciale"
+    - "deepseek-v4-flash"
+    - "deepseek-v4-pro"
+  base-url: https://api.deepseek.com
+
+essentialai:
+  models:
+    - "rnj-1-instruct"
+  base-url: https://api.essentialai.com/v1
+
+gemini:
+  models:
+    - "gemini-2.0-flash-001"
+    - "gemini-2.0-flash-lite-001"
+    - "gemini-2.5-flash"
+    - "gemini-2.5-flash-image"
+    - "gemini-2.5-flash-lite"
+    - "gemini-2.5-flash-lite-preview-09-2025"
+    - "gemini-2.5-pro"
+    - "gemini-2.5-pro-preview"
+    - "gemini-2.5-pro-preview-05-06"
+    - "gemini-3.1-flash-image-preview"
+    - "gemini-3.1-flash-lite"
+    - "gemini-3.1-flash-lite-preview"
+    - "gemini-3.1-pro-preview"
+    - "gemini-3.1-pro-preview-customtools"
+    - "gemini-3-flash-preview"
+    - "gemini-3-pro-image-preview"
+    - "gemini-flash-latest"
+    - "gemini-pro-latest"
+    - "gemma-2-27b-it"
+    - "gemma-3-12b-it"
+    - "gemma-3-27b-it"
+    - "gemma-3-4b-it"
+    - "gemma-3n-e4b-it"
+    - "gemma-4-26b-a4b-it"
+    - "gemma-4-31b-it"
+  base-url: https://generativelanguage.googleapis.com
+
+ibm-granite:
+  models:
+    - "granite-4.0-h-micro"
+    - "granite-4.1-8b"
+  base-url: https://api.ibm.com/granite/ai/v1
+
+inception:
+  models:
+    - "mercury-2"
+  base-url: https://api.inceptionlabs.ai/v1/
+
+inflection:
+  models:
+    - "inflection-3-pi"
+    - "inflection-3-productivity"
+  base-url: https://api.inflection.ai/v1
+
+kwaipilot:
+  models:
+    - "kat-coder-pro-v2"
+  base-url: https://api.kwaipilot.com/v1
+
+liquid:
+  models:
+    - "lfm-2-24b-a2b"
+  base-url: https://api.liquid.ai/v1
+
+mancer:
+  models:
+    - "weaver"
+  base-url: https://api.mancer.xyz/v1
+
+meta-llama:
+  models:
+    - "llama-3.1-70b-instruct"
+    - "llama-3.1-8b-instruct"
+    - "llama-3.2-11b-vision-instruct"
+    - "llama-3.2-1b-instruct"
+    - "llama-3.2-3b-instruct"
+    - "llama-3.3-70b-instruct"
+    - "llama-3-70b-instruct"
+    - "llama-3-8b-instruct"
+    - "llama-4-maverick"
+    - "llama-4-scout"
+    - "llama-guard-3-8b"
+    - "llama-guard-4-12b"
+  base-url: https://api.llama.com/v1/
+
+microsoft:
+  models:
+    - "phi-4"
+    - "phi-4-mini-instruct"
+    - "wizardlm-2-8x22b"
+  base-url: https://api.copilot.microsoft.com/v1
+
+minimax:
+  models:
+    - "minimax-01"
+    - "minimax-m1"
+    - "minimax-m2"
+    - "minimax-m2.1"
+    - "minimax-m2.5"
+    - "minimax-m2.7"
+    - "minimax-m2-her"
+  base-url: https://api.minimax.io/v1/
+
+mistralai:
+  models:
+    - "codestral-2508"
+    - "devstral-2512"
+    - "devstral-medium"
+    - "devstral-small"
+    - "ministral-14b-2512"
+    - "ministral-3b-2512"
+    - "ministral-8b-2512"
+    - "mistral-7b-instruct-v0.1"
+    - "mistral-large"
+    - "mistral-large-2407"
+    - "mistral-large-2411"
+    - "mistral-large-2512"
+    - "mistral-medium-3"
+    - "mistral-medium-3.1"
+    - "mistral-medium-3-5"
+    - "mistral-nemo"
+    - "mistral-saba"
+    - "mistral-small-24b-instruct-2501"
+    - "mistral-small-2603"
+    - "mistral-small-3.1-24b-instruct"
+    - "mistral-small-3.2-24b-instruct"
+    - "mixtral-8x22b-instruct"
+    - "mixtral-8x7b-instruct"
+    - "pixtral-large-2411"
+    - "voxtral-small-24b-2507"
+  base-url: https://api.mistral.ai/
+
+moonshotai:
+  models:
+    - "kimi-k2"
+    - "kimi-k2-0905"
+    - "kimi-k2.5"
+    - "kimi-k2.6"
+    - "kimi-k2-thinking"
+    - "kimi-latest"
+  base-url: https://api.moonshot.ai/v1/
+
+morph:
+  models:
+    - "morph-v3-fast"
+    - "morph-v3-large"
+  base-url: https://api.morph.ai/v1
+
+nex-agi:
+  models:
+    - "deepseek-v3.1-nex-n1"
+  base-url: https://api.nex-agi.com/v1
+
+nousresearch:
+  models:
+    - "hermes-2-pro-llama-3-8b"
+    - "hermes-3-llama-3.1-405b"
+    - "hermes-3-llama-3.1-70b"
+    - "hermes-4-405b"
+    - "hermes-4-70b"
+  base-url: https://api.nousresearch.com/v1/
+
+nvidia:
+  models:
+    - "llama-3.1-nemotron-70b-instruct"
+    - "llama-3.3-nemotron-super-49b-v1.5"
+    - "nemotron-3-nano-30b-a3b"
+    - "nemotron-3-super-120b-a12b"
+    - "nemotron-nano-12b-v2-vl"
+    - "nemotron-nano-9b-v2"
+  base-url: https://integrate.api.nvidia.com/v1
+
+openai:
+  models:
+    - "gpt-3.5-turbo"
+    - "gpt-3.5-turbo-0613"
+    - "gpt-3.5-turbo-16k"
+    - "gpt-3.5-turbo-instruct"
+    - "gpt-4"
+    - "gpt-4-0314"
+    - "gpt-4.1"
+    - "gpt-4-1106-preview"
+    - "gpt-4.1-mini"
+    - "gpt-4.1-nano"
+    - "gpt-4o"
+    - "gpt-4o-2024-05-13"
+    - "gpt-4o-2024-08-06"
+    - "gpt-4o-2024-11-20"
+    - "gpt-4o-audio-preview"
+    - "gpt-4o-mini"
+    - "gpt-4o-mini-2024-07-18"
+    - "gpt-4o-mini-search-preview"
+    - "gpt-4o-search-preview"
+    - "gpt-4-turbo"
+    - "gpt-4-turbo-preview"
+    - "gpt-5"
+    - "gpt-5.1"
+    - "gpt-5.1-chat"
+    - "gpt-5.1-codex"
+    - "gpt-5.1-codex-max"
+    - "gpt-5.1-codex-mini"
+    - "gpt-5.2"
+    - "gpt-5.2-chat"
+    - "gpt-5.2-codex"
+    - "gpt-5.2-pro"
+    - "gpt-5.3-chat"
+    - "gpt-5.3-codex"
+    - "gpt-5.4"
+    - "gpt-5.4-image-2"
+    - "gpt-5.4-mini"
+    - "gpt-5.4-nano"
+    - "gpt-5.4-pro"
+    - "gpt-5.5"
+    - "gpt-5.5-pro"
+    - "gpt-5-chat"
+    - "gpt-5-codex"
+    - "gpt-5-image"
+    - "gpt-5-image-mini"
+    - "gpt-5-mini"
+    - "gpt-5-nano"
+    - "gpt-5-pro"
+    - "gpt-audio"
+    - "gpt-audio-mini"
+    - "gpt-chat-latest"
+    - "gpt-latest"
+    - "gpt-mini-latest"
+    - "gpt-oss-120b"
+    - "gpt-oss-20b"
+    - "gpt-oss-safeguard-20b"
+    - "o1"
+    - "o1-pro"
+    - "o3"
+    - "o3-deep-research"
+    - "o3-mini"
+    - "o3-mini-high"
+    - "o3-pro"
+    - "o4-mini"
+    - "o4-mini-deep-research"
+    - "o4-mini-high"
+  base-url: https://api.openai.com/v1
+
+openrouter:
+  models: []
+  base-url: https://openrouter.ai/api/v1
+
+perplexity:
+  models:
+    - "sonar"
+    - "sonar-deep-research"
+    - "sonar-pro"
+    - "sonar-pro-search"
+    - "sonar-reasoning-pro"
+  base-url: https://api.perplexity.ai
+
+prime-intellect:
+  models:
+    - "intellect-3"
+  base-url: https://api.prime-intellect.com/v1
+
+qwen:
+  models:
+    - "qwen-2.5-72b-instruct"
+    - "qwen-2.5-7b-instruct"
+    - "qwen-2.5-coder-32b-instruct"
+    - "qwen2.5-vl-72b-instruct"
+    - "qwen3-14b"
+    - "qwen3-235b-a22b"
+    - "qwen3-235b-a22b-2507"
+    - "qwen3-235b-a22b-thinking-2507"
+    - "qwen3-30b-a3b"
+    - "qwen3-30b-a3b-instruct-2507"
+    - "qwen3-30b-a3b-thinking-2507"
+    - "qwen3-32b"
+    - "qwen3.5-122b-a10b"
+    - "qwen3.5-27b"
+    - "qwen3.5-35b-a3b"
+    - "qwen3.5-397b-a17b"
+    - "qwen3.5-9b"
+    - "qwen3.5-flash-02-23"
+    - "qwen3.5-plus-02-15"
+    - "qwen3.5-plus-20260420"
+    - "qwen3.6-27b"
+    - "qwen3.6-35b-a3b"
+    - "qwen3.6-flash"
+    - "qwen3.6-max-preview"
+    - "qwen3.6-plus"
+    - "qwen3-8b"
+    - "qwen3-coder"
+    - "qwen3-coder-30b-a3b-instruct"
+    - "qwen3-coder-flash"
+    - "qwen3-coder-next"
+    - "qwen3-coder-plus"
+    - "qwen3-max"
+    - "qwen3-max-thinking"
+    - "qwen3-next-80b-a3b-instruct"
+    - "qwen3-next-80b-a3b-thinking"
+    - "qwen3-vl-235b-a22b-instruct"
+    - "qwen3-vl-235b-a22b-thinking"
+    - "qwen3-vl-30b-a3b-instruct"
+    - "qwen3-vl-30b-a3b-thinking"
+    - "qwen3-vl-32b-instruct"
+    - "qwen3-vl-8b-instruct"
+    - "qwen3-vl-8b-thinking"
+    - "qwen-max"
+    - "qwen-plus"
+    - "qwen-plus-2025-07-28"
+    - "qwen-plus-2025-07-28:thinking"
+    - "qwen-turbo"
+    - "qwen-vl-max"
+    - "qwen-vl-plus"
+  base-url: https://dashscope-intl.aliyuncs.com/compatible-mode/v1/
+
+rekaai:
+  models:
+    - "reka-edge"
+    - "reka-flash-3"
+  base-url: https://api.reka.ai/v1/
+
+relace:
+  models:
+    - "relace-apply-3"
+    - "relace-search"
+  base-url: https://api.relace.run/
+
+stepfun:
+  models:
+    - "step-3.5-flash"
+  base-url: https://api.stepfun.com/v1/
+
+tencent:
+  models:
+    - "hunyuan-a13b-instruct"
+    - "hy3-preview"
+  base-url: https://hunyuan.tencentcloudapi.com
+
+upstage:
+  models:
+    - "solar-pro-3"
+  base-url: https://api.upstage.ai/v2/
+
+writer:
+  models:
+    - "palmyra-x5"
+  base-url: https://api.writer.com/v1
+
+x-ai:
+  models:
+    - "grok-3"
+    - "grok-3-beta"
+    - "grok-3-mini"
+    - "grok-3-mini-beta"
+    - "grok-4"
+    - "grok-4.1-fast"
+    - "grok-4.20"
+    - "grok-4.20-multi-agent"
+    - "grok-4.3"
+    - "grok-4-fast"
+    - "grok-code-fast-1"
+  base-url: https://api.x.ai/
+
+xiaomi:
+  models:
+    - "mimo-v2.5"
+    - "mimo-v2.5-pro"
+    - "mimo-v2-flash"
+    - "mimo-v2-omni"
+    - "mimo-v2-pro"
+  base-url: https://api.xiaomimimo.com/v1
+  upstream-auth: api-key
+
+z-ai:
+  models:
+    - "glm-4-32b"
+    - "glm-4.5"
+    - "glm-4.5-air"
+    - "glm-4.5v"
+    - "glm-4.6"
+    - "glm-4.6v"
+    - "glm-4.7"
+    - "glm-4.7-flash"
+    - "glm-5"
+    - "glm-5.1"
+    - "glm-5-turbo"
+    - "glm-5v-turbo"
+  base-url: https://open.bigmodel.cn/api/paas/v4

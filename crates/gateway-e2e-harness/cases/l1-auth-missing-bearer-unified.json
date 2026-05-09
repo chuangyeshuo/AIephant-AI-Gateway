@@ -1,0 +1,10 @@
+{
+  "caseId": "l1-auth-missing-bearer-unified",
+  "tier": "L1",
+  "intent": "Unified API without Authorization (full only; gate uses ERR-001)",
+  "profile": ["full"],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"auth-missing\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": { "in": [400, 401, 403] }
+  }
+}

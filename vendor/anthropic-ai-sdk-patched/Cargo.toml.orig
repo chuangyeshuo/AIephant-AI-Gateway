@@ -1,0 +1,25 @@
+[package]
+name = "anthropic-ai-sdk"
+version = "0.2.25"
+edition = "2024"
+authors = ["Katsuhiro Honda<freewave3@gmail.com>"]
+categories = ["api-bindings"]
+description = "An unofficial Rust SDK for Anthropic's Claude AI API"
+keywords = ["anthropic", "sdk", "ai"]
+license = "MIT"
+repository = "https://github.com/katsuhirohonda/anthropic-sdk-rs/tree/main/anthropic-ai-sdk"
+rust-version = "1.85.0"
+
+[dependencies]
+thiserror = "2.0.12"
+serde = { version = "1.0.219", features = ["derive"] }
+reqwest = { version = "0.12.15", features = ["json", "stream", "multipart"] }
+async-trait = "0.1.88"
+tracing = "0.1.41"
+serde_json = "1.0.140"
+time = { version = "0.3.41", features = ["serde", "serde-well-known"] }
+tokio = { version = "1.45.0", features = ["full"] }
+futures-util = "0.3.31"
+eventsource-stream = "0.2.3"
+tokio-util = { version = "0.7.15", features = ["io"] }
+futures-lite = "2.6.0"

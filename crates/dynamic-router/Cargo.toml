@@ -1,0 +1,25 @@
+[package]
+name = "dynamic-router"
+edition = { workspace = true }
+authors = { workspace = true }
+license = { workspace = true }
+version = { workspace = true }
+description = "Dynamic router for the Cloud LLM proxy router"
+homepage = "https://docs.alephant.ai/ai-gateway"
+publish = false
+
+[dependencies]
+futures = { workspace = true }
+pin-project = { workspace = true }
+pin-project-lite = { workspace = true }
+tower = { workspace = true, features = ["discover", "ready-cache"] }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+http = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+[lints]
+workspace = true

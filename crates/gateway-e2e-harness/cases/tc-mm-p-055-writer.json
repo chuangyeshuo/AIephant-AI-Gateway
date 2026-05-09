@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-055",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_writer, unified model writer/palmyra-x5 (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_writer\" -H \"Content-Type: application/json\" -d '{\"model\":\"writer/palmyra-x5\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-writer\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from writer/"
+      ]
+    }
+  }
+}

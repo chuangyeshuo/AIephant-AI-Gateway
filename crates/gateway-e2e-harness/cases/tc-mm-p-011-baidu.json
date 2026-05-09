@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-011",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_baidu, unified model baidu/ernie-4.5-21b-a3b-thinking (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_baidu\" -H \"Content-Type: application/json\" -d '{\"model\":\"baidu/ernie-4.5-21b-a3b-thinking\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-baidu\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from baidu/"
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "caseId": "UNI-011",
+  "tier": "L2",
+  "intent": "Named provider qwen (second matrix row)",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"qwen/qwen-turbo\",\"messages\":[{\"role\":\"user\",\"content\":\"uni-011b\"}],\"max_tokens\":8}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": [
+    "full"
+  ]
+}

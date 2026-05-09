@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-020",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_google, unified model google/gemini-2.5-flash (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_google\" -H \"Content-Type: application/json\" -d '{\"model\":\"google/gemini-2.5-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-google\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from google/"
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "caseId": "CFG-001",
+  "tier": "L1",
+  "intent": "Smoke: gateway accepts traffic after startup (same probe as CFG-007)",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/health",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "gate",
+    "full"
+  ]
+}

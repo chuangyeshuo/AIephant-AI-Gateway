@@ -1,0 +1,25 @@
+[package]
+name = "latency-router"
+edition = { workspace = true }
+authors = { workspace = true }
+license = { workspace = true }
+version = { workspace = true }
+description = "Route request to the service with the lowest latest"
+homepage = "https://docs.alephant.ai/ai-gateway"
+publish = false
+
+[dependencies]
+futures = { workspace = true }
+http = { workspace = true }
+pin-project = { workspace = true }
+rustc-hash = { workspace = true }
+tower = { workspace = true, features = ["discover", "ready-cache", "load"] }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+[lints]
+workspace = true

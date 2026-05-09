@@ -1,0 +1,33 @@
+[package]
+name = "alephant-llm-kv-cache"
+version = { workspace = true }
+edition = { workspace = true }
+publish = false
+
+[features]
+default = []
+external = ["dep:async-trait", "dep:reqwest"]
+internal = ["dep:async-trait", "dep:tikv-client"]
+
+[dependencies]
+async-trait = { workspace = true, optional = true }
+futures = { workspace = true }
+http = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+tikv-client = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["rt", "macros", "time", "sync"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros", "time", "sync"] }
+wiremock = "0.6"
+
+[[test]]
+name = "cf_kv_mock"
+required-features = ["external"]

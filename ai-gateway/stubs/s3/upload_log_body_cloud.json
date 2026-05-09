@@ -1,0 +1,10 @@
+{
+  "id": "success:s3:upload_log_body_cloud",
+  "request": {
+    "method": "PUT",
+    "urlPathPattern": "^/request-response-storage/organizations/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ttl-[0-9]+/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(request_body|response_body)"
+  },
+  "response": {
+    "status": 200
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "caseId": "ROUTE-002",
+  "tier": "L2",
+  "intent": "/v1/chat/completions unified",
+  "curl": "curl -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"openai/gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"route-002\"}],\"max_tokens\":4}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices",
+        "/choices/0/message"
+      ],
+      "arrayMinLength": {
+        "/choices": 1
+      }
+    }
+  },
+  "profile": [
+    "full"
+  ]
+}

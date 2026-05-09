@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-010",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_arcee-ai, unified model arcee-ai/trinity-large-thinking (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_arcee-ai\" -H \"Content-Type: application/json\" -d '{\"model\":\"arcee-ai/trinity-large-thinking\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-arcee-ai\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from arcee-ai/"
+      ]
+    }
+  }
+}

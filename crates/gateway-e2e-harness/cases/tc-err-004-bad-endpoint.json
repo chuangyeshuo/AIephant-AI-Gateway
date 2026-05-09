@@ -1,0 +1,25 @@
+{
+  "caseId": "ERR-004",
+  "tier": "L1",
+  "intent": "Unsupported route / method (GET on POST-only path); body often JSON error",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/v1/chat/completions",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        400,
+        404,
+        405,
+        422
+      ]
+    },
+    "body": {
+      "contains": [
+        "\"error\""
+      ]
+    }
+  },
+  "profile": [
+    "gate",
+    "full"
+  ]
+}

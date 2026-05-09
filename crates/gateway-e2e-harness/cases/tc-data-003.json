@@ -1,0 +1,12 @@
+{
+  "caseId": "DATA-003",
+  "tier": "L2",
+  "intent": "DATA-003: DB/Redis hot reload / pool — see ai-gateway/tests (manual)",
+  "curl": "curl -X GET \"$GATEWAY_BASE\"/health",
+  "assertions": {
+    "httpStatus": 200
+  },
+  "profile": [
+    "manual"
+  ]
+}

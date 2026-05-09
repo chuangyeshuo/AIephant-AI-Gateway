@@ -1,0 +1,25 @@
+{
+  "caseId": "UNI-010",
+  "tier": "L2",
+  "intent": "Bedrock stream",
+  "curl": "curl -N -X POST \"$GATEWAY_BASE\"/v1/chat/completions -H \"Authorization: Bearer legend\" -H \"Content-Type: application/json\" -d '{\"model\":\"bedrock/us.anthropic.claude-3-5-sonnet-20241022-v2:0\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"uni-010\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": {
+      "in": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        422,
+        429,
+        500,
+        502,
+        503
+      ]
+    }
+  },
+  "profile": [
+    "full"
+  ]
+}

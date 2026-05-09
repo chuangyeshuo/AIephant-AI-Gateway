@@ -1,0 +1,26 @@
+{
+  "caseId": "MM-P-022",
+  "tier": "L2",
+  "intent": "multi_model_service per-provider smoke: VK legend_ibm-granite, unified model ibm-granite/granite-4.0-h-micro (from provider_model_seed)",
+  "profile": [
+    "gate",
+    "full"
+  ],
+  "requiredEnv": [
+    "MULTI_MODEL_MOCK_E2E_ENABLE"
+  ],
+  "curl": "curl -X POST \"$GATEWAY_BASE/v1/chat/completions\" -H \"Authorization: Bearer legend_ibm-granite\" -H \"Content-Type: application/json\" -d '{\"model\":\"ibm-granite/granite-4.0-h-micro\",\"messages\":[{\"role\":\"user\",\"content\":\"mm-p-ibm-granite\"}],\"max_tokens\":24}'",
+  "assertions": {
+    "httpStatus": 200,
+    "json": {
+      "pathExists": [
+        "/choices/0/message/content"
+      ]
+    },
+    "body": {
+      "contains": [
+        "Mock response from ibm-granite/"
+      ]
+    }
+  }
+}
