@@ -220,7 +220,7 @@ Self-hosting is useful when you need the gateway inside your own network, want f
 | S3-compatible storage | Optional | Large request/response body archival |
 
 Build `ai-gateway` with exactly one of `--features external` or `--features internal`.
-
+ 
 ### Build
 
 ```bash
