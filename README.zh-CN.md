@@ -160,7 +160,7 @@ Alephant AI Gateway 在仓库内为支持 AI 辅助开发的 IDE 提供工程化
 
 | IDE / Agent 客户端 | 状态 | 包含内容 |
 | --- | --- | --- |
-| Cursor | 已就绪 | 项目架构与代码规范规则、开发与 API 工作流指南、分阶段模块实现技能（Skill）、文件式任务管理（Task Magic）、以及 `docs/agent-docs/` 下的 agent 参考文档 |
+| Cursor | 已就绪 | 项目架构与代码规范规则、开发与 API 工作流指南、分阶段模块实现技能（Skill）、文件式任务管理（Task Magic）可参考.cursor目录，同时在Agent Settings - Models配置网关 |
 | opencode | 适配中 | 适配器与配置开发进行中 |
 | Codex | 适配中 | 适配器与配置开发进行中 |
 | Claude Code | 适配中 | 适配器与配置开发进行中 |
