@@ -43,7 +43,7 @@
   <a href="#screenshots">Screenshots</a> ·
   <a href="#comparison">Comparison</a> ·
   <a href="#community">Community</a> ·
-  <a href="https://api.alephant.io/">Docs</a>
+  <a href="https://developers.alephant.io/">Docs</a>
 </p>
 
 <p align="center">
@@ -341,7 +341,7 @@ Portkey, Alephant, and LiteLLM are excellent projects, but they start from diffe
 | Project | Best known for | Best fit |
 | --- | --- | --- |
 | Portkey | Enterprise AI gateway controls, guardrails, and managed policy workflows | Teams that want a managed AI control plane |
-| Alephant | LLM observability, request analytics, sessions, and cost visibility | Teams whose primary need is tracing and analytics |
+| Helicone | LLM observability, request analytics, sessions, and cost visibility | Teams whose primary need is tracing and analytics |
 | LiteLLM | Broad Python proxy/SDK ecosystem for many providers | Teams that want maximum provider breadth through a Python stack |
 | Alephant AI Gateway | Agent development infrastructure, cost control, governance, provider routing, and SaaS + self-host deployment | Teams building production agents that need cost guardrails, request traceability, BYO keys, and multi-provider control |
 
@@ -403,3 +403,5 @@ For substantial changes, include reproducible validation steps and feature-flag 
 
 Licensed under the [GPL License 3.0](LICENSE).
 Upstream license continuity is preserved where applicable.
+
+https://www.star-history.com/?repos=AlephantAI%2FAIephant-AI-Gateway&type=date&legend=top-left
