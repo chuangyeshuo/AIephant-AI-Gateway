@@ -404,4 +404,12 @@ For substantial changes, include reproducible validation steps and feature-flag 
 Licensed under the [GPL License 3.0](LICENSE).
 Upstream license continuity is preserved where applicable.
 
-https://www.star-history.com/?repos=AlephantAI%2FAIephant-AI-Gateway&type=date&legend=top-left
+## Star History
+
+<a href="https://www.star-history.com/?repos=AlephantAI%2FAIephant-AI-Gateway&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=AlephantAI/AIephant-AI-Gateway&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=AlephantAI/AIephant-AI-Gateway&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=AlephantAI/AIephant-AI-Gateway&type=date&legend=top-left" />
+ </picture>
+</a>
