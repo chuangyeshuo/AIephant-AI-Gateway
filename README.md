@@ -381,7 +381,7 @@ alephant-ai-gateway/
 ## Community
 
 - Website: [alephant.io](https://alephant.io/)
-- Docs: [developers.alephant.io](https://api.alephant.io/)
+- Docs: [developers.alephant.io](https://developers.alephant.io/)
 - Discord: [discord.gg/tRQghcXhaH](https://discord.gg/tRQghcXhaH)
 - Telegram: [t.me/alephantai](https://t.me/alephantai)
 - X: [x.com/alephantai](https://x.com/alephantai)
