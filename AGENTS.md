@@ -103,6 +103,29 @@
 - **OpenAI 兼容**: `/v1/chat/completions`、`/v1/completions`、`/v1/embeddings`
 - **统一 API**: `/ai/*` 路由
 
+#### 7. 安全插件系统 (Security Plugin System)
+- **代码位置**: `ai-gateway/src/plugin/`
+- **核心文件**:
+  - `mod.rs`: [`SecurityPlugin`] trait 定义、注册表
+  - `loader.rs`: [`PluginLoader`] 配置驱动加载器
+  - `builtins.rs`: 内置插件 (NoOp、SensitiveDataDetector、DataClassifier)
+- **插件接口**:
+  - [`SecurityPlugin::check_request`]: 请求前置检查
+  - [`SecurityPlugin::mask_response`]: 响应后置脱敏
+- **配置示例**:
+  ```yaml
+  global:
+    middleware:
+      security:
+        enabled: true
+        plugins:
+          - name: sensitive_data_detector
+            enabled: true
+            priority: 10
+            config:
+              fields: [password, phone, id_card, bank_account]
+  ```
+
 ### 0.5 📦 仓库部署与多服务定义 (Repository & Deployment Scope)
 
 - **仓库类型**: Rust Workspace (单仓库多 crate)
@@ -136,6 +159,7 @@
 - 🔥 **Provider 调用**: `ai-gateway/src/discover/` - Provider 调用链路
 - 🔥 **缓存查找**: `ai-gateway/src/semantic_cache/` - 语义缓存匹配
 - 🔥 **中间件链**: `ai-gateway/src/middleware/` - 请求处理中间件
+- 🔥 **安全插件**: `ai-gateway/src/plugin/` - 插件加载与执行
 
 ### 0.8 运行时环境配置 (Runtime Environment Config)
 
@@ -184,6 +208,7 @@ Project_Root (Cargo Workspace)
 │       ├── app_state.rs             # 应用状态
 │       ├── app_redis.rs             # Redis 客户端
 │       ├── config/                  # 配置定义
+│       │   └── security_plugin.rs   # 安全插件配置
 │       ├── endpoints/               # HTTP 端点定义
 │       ├── router/                  # 路由策略实现
 │       ├── discover/                # Provider 发现与调用
@@ -191,6 +216,11 @@ Project_Root (Cargo Workspace)
 │       │   └── provider.rs
 │       ├── dispatcher/              # 请求分发
 │       ├── middleware/               # Tower Middleware
+│       │   └── security.rs          # 安全插件中间件
+│       ├── plugin/                  # 🔌 安全插件系统
+│       │   ├── mod.rs               # SecurityPlugin trait、注册表
+│       │   ├── loader.rs            # PluginLoader 配置驱动加载
+│       │   └── builtins.rs          # 内置插件实现
 │       ├── metrics/                  # Prometheus 指标
 │       ├── logger/                  # Tracing 日志
 │       ├── store/                   # 数据存储 (DB Listener)
@@ -292,6 +322,7 @@ RUST_LOG=debug cargo run --bin ai-gateway -- --config config.yaml
 - `Cargo.toml` - 依赖声明
 - `config/` - 配置文件
 - `docs/` - 文档
+- **`ai-gateway/src/plugin/` - 安全插件（可扩展区域）**
 
 ❌ **禁止修改区域**：
 - `vendor/` - Patched 依赖（自动管理）
@@ -396,6 +427,45 @@ impl Provider for OpenAIProvider {
 }
 ```
 
+**场景 2：编写一个安全插件**
+
+```rust
+// ai-gateway/src/plugin/builtins.rs
+
+use ai_gateway::plugin::{
+    SecurityPlugin, SecurityContext, ResponseData, SecurityError, SensitivityLevel,
+};
+
+pub struct SensitiveDataDetector {
+    config: SensitiveDataDetectorConfig,
+}
+
+impl SecurityPlugin for SensitiveDataDetector {
+    fn name(&self) -> &'static str {
+        "sensitive_data_detector"
+    }
+
+    fn priority(&self) -> i32 {
+        10 // High priority - runs early
+    }
+
+    fn check_request(&self, ctx: &SecurityContext) -> Result<(), SecurityError> {
+        // 检测敏感字段
+        for field in &self.config.fields {
+            if contains_sensitive_data(&ctx.request_body, field) {
+                return Err(SecurityError::SensitiveDataDetected(field.clone()));
+            }
+        }
+        Ok(())
+    }
+
+    fn mask_response(&self, data: &mut ResponseData) -> Result<(), SecurityError> {
+        mask_sensitive_json(&mut data.body, &self.config.fields);
+        Ok(())
+    }
+}
+```
+
 ---
 
 ## 4. 🧪 测试与故障排查 (Testing & Troubleshooting)
@@ -464,6 +534,14 @@ impl Provider for OpenAIProvider {
 
 - **ADR-004: 使用 Rust Edition 2024**
   - **原因**: 支持更现代的 Rust 语法和 async traits
+
+- **ADR-005: 安全插件系统架构**
+  - **决定**: 引入 `SecurityPlugin` trait + `PluginLoader` 配置驱动架构
+  - **原因**:
+    - 安全需求差异化：企业版需要敏感数据检测、金融版需要 PCI-DSS 合规
+    - 零侵入：插件作为独立 crate，通过配置组装，不影响主仓库逻辑
+    - 可测试：每个插件独立测试，通过配置组合
+  - **参考**: `ai-gateway/src/plugin/`
 
 ### 6.2 避坑指南 (Known Issues)
 

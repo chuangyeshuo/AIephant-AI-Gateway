@@ -1,5 +1,6 @@
 pub mod alephant;
 pub mod balance;
+pub mod security_plugin;
 pub mod client_ip_rate_limit;
 pub mod cloudflare_kv;
 pub mod database;
@@ -73,6 +74,9 @@ pub struct MiddlewareConfig {
     pub gateway_in_flight_limit: Option<self::gateway_in_flight_limit::GatewayInFlightLimitConfig>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health_event_broadcast: Option<HealthEventBroadcastConfig>,
+    /// Security plugin configuration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub security: Option<self::security_plugin::SecurityPluginConfiguration>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Hash, Default)]

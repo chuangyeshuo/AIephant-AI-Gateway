@@ -1,5 +1,6 @@
 pub mod add_extension;
 pub mod auth;
+pub mod security;
 pub mod client_ip_rate_limit;
 mod counted_body;
 pub mod fallback_request_log;
