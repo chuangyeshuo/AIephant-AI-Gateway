@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use bytes::Bytes;
 
 use super::{
-    NoOpSecurityPlugin, ResponseData, SecurityContext, SecurityError, SecurityPlugin,
+    ResponseData, SecurityContext, SecurityError, SecurityPlugin,
     SensitivityLevel,
 };
 
@@ -86,6 +86,7 @@ impl Default for SensitiveDataDetectorConfig {
 }
 
 /// A plugin that detects sensitive data in requests and responses.
+#[derive(Debug)]
 pub struct SensitiveDataDetector {
     config: SensitiveDataDetectorConfig,
 }
@@ -204,6 +205,7 @@ pub struct DataClassifierConfig {
 }
 
 /// A plugin that classifies data sensitivity levels.
+#[derive(Debug)]
 pub struct DataClassifier {
     config: DataClassifierConfig,
 }
