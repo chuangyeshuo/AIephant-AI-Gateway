@@ -1,6 +1,5 @@
 pub mod alephant;
 pub mod balance;
-pub mod security_plugin;
 pub mod client_ip_rate_limit;
 pub mod cloudflare_kv;
 pub mod database;
@@ -21,6 +20,7 @@ pub mod response_headers;
 pub mod retry;
 pub mod router;
 pub mod s3;
+pub mod security_plugin;
 pub mod semantic_cache;
 pub mod server;
 pub mod tikv_kv;

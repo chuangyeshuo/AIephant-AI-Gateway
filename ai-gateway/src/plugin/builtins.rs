@@ -4,12 +4,7 @@
 
 use std::collections::HashSet;
 
-use bytes::Bytes;
-
-use super::{
-    ResponseData, SecurityContext, SecurityError, SecurityPlugin,
-    SensitivityLevel,
-};
+use super::{ResponseData, SecurityContext, SecurityError, SecurityPlugin, SensitivityLevel};
 
 // ---------------------------------------------------------------------------
 // NoOp Plugin

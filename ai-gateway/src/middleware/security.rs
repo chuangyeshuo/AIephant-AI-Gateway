@@ -7,12 +7,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use axum::body::Body;
 use bytes::Bytes;
 use http::{Request, Response};
 use tower::{Layer, Service};
 
 use crate::plugin::{PluginLoader, SecurityContext};
+use crate::types::body::Body;
 
 /// Security middleware layer.
 ///
@@ -124,7 +124,7 @@ where
         let fut = self.inner.call(req);
 
         Box::pin(async move {
-            let mut res = fut.await?;
+            let res = fut.await?;
 
             // Post-process: mask response if needed
             // Note: In a full implementation, we'd extract response body here

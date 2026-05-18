@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::plugin::loader::{PluginConfig, SecurityPluginsConfig};
+use crate::plugin::loader::SecurityPluginsConfig;
 
 /// Security plugin configuration.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

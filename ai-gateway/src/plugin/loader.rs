@@ -147,10 +147,9 @@ fn create_plugin(
                 Some(toml::Value::Table(table)) if table.is_empty() => {
                     SensitiveDataDetectorConfig::default()
                 }
-                Some(c) => {
-                    SensitiveDataDetectorConfig::try_from(c)
-                        .map_err(|e| SecurityError::ConfigError(format!("sensitive_data_detector: {e}")))?
-                }
+                Some(c) => SensitiveDataDetectorConfig::try_from(c).map_err(|e| {
+                    SecurityError::ConfigError(format!("sensitive_data_detector: {e}"))
+                })?,
                 None => SensitiveDataDetectorConfig::default(),
             };
             Ok(Arc::new(SensitiveDataDetector::with_config(
@@ -163,15 +162,11 @@ fn create_plugin(
                 Some(toml::Value::Table(table)) if table.is_empty() => {
                     DataClassifierConfig::default()
                 }
-                Some(c) => {
-                    DataClassifierConfig::try_from(c)
-                        .map_err(|e| SecurityError::ConfigError(format!("data_classifier: {e}")))?
-                }
+                Some(c) => DataClassifierConfig::try_from(c)
+                    .map_err(|e| SecurityError::ConfigError(format!("data_classifier: {e}")))?,
                 None => DataClassifierConfig::default(),
             };
-            Ok(Arc::new(DataClassifier::with_config(
-                classifier_config,
-            )))
+            Ok(Arc::new(DataClassifier::with_config(classifier_config)))
         }
 
         _ => {

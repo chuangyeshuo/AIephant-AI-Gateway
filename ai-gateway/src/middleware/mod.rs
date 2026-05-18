@@ -1,6 +1,5 @@
 pub mod add_extension;
 pub mod auth;
-pub mod security;
 pub mod client_ip_rate_limit;
 mod counted_body;
 pub mod fallback_request_log;
@@ -13,4 +12,5 @@ pub mod prompts;
 pub mod request_context;
 pub mod response_headers;
 pub mod routing_precheck;
+pub mod security;
 pub mod workspace_concurrency;
