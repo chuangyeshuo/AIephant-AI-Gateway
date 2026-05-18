@@ -259,6 +259,7 @@ impl SecurityPlugin for DataClassifier {
 /// Classify a request's sensitivity level.
 fn classify_request(ctx: &SecurityContext) -> SensitivityLevel {
     let body_str = String::from_utf8_lossy(&ctx.request_body);
+    let lower = body_str.to_lowercase();
 
     // Check for high-sensitivity patterns
     let high_sensitivity = ["password", "secret", "token", "api_key", "private_key"];
@@ -266,19 +267,22 @@ fn classify_request(ctx: &SecurityContext) -> SensitivityLevel {
     let financial = ["bank_account", "credit_card", "card_number"];
 
     for field in &high_sensitivity {
-        if body_str.to_lowercase().contains(&format!(r#""{}":"#, field))) {
+        let pattern = format!(r#""{}":""#, field);
+        if lower.contains(&pattern) {
             return SensitivityLevel::Confidential;
         }
     }
 
     for field in &personal_info {
-        if body_str.to_lowercase().contains(&format!(r#""{}":"#, field))) {
+        let pattern = format!(r#""{}":""#, field);
+        if lower.contains(&pattern) {
             return SensitivityLevel::Sensitive;
         }
     }
 
     for field in &financial {
-        if body_str.to_lowercase().contains(&format!(r#""{}":"#, field))) {
+        let pattern = format!(r#""{}":""#, field);
+        if lower.contains(&pattern) {
             return SensitivityLevel::Confidential;
         }
     }

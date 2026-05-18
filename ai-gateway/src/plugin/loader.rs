@@ -5,13 +5,12 @@
 
 use std::sync::Arc;
 
-use ArcSwap::{ArcSwap, From.into_arc_swap};
 use serde::{Deserialize, Serialize};
 
-use super::{
-    get_plugin, SecurityPlugin, SecurityError, ResponseData, SecurityContext,
+use super::builtins::{
+    DataClassifier, DataClassifierConfig, SensitiveDataDetector, SensitiveDataDetectorConfig,
 };
-use super::builtins::{SensitiveDataDetector, SensitiveDataDetectorConfig, DataClassifier, DataClassifierConfig};
+use super::{ResponseData, SecurityContext, SecurityError, SecurityPlugin, get_plugin};
 
 /// Plugin loading configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,12 +127,17 @@ impl PluginLoader {
 
 impl Default for PluginLoader {
     fn default() -> Self {
-        Self { plugins: Vec::new() }
+        Self {
+            plugins: Vec::new(),
+        }
     }
 }
 
 /// Create a plugin instance by name with optional configuration.
-fn create_plugin(name: &str, config: &toml::Value) -> Result<Arc<dyn SecurityPlugin>, SecurityError> {
+fn create_plugin(
+    name: &str,
+    config: &toml::Value,
+) -> Result<Arc<dyn SecurityPlugin>, SecurityError> {
     match name {
         "noop" => Ok(Arc::new(super::NoOpSecurityPlugin)),
 
@@ -145,7 +149,9 @@ fn create_plugin(name: &str, config: &toml::Value) -> Result<Arc<dyn SecurityPlu
                     SecurityError::ConfigError(format!("sensitive_data_detector: {e}"))
                 })?
             };
-            Ok(Arc::new(SensitiveDataDetector::with_config(detector_config)))
+            Ok(Arc::new(SensitiveDataDetector::with_config(
+                detector_config,
+            )))
         }
 
         "data_classifier" => {
@@ -161,9 +167,8 @@ fn create_plugin(name: &str, config: &toml::Value) -> Result<Arc<dyn SecurityPlu
 
         _ => {
             // Try to get from registry (for third-party plugins)
-            get_plugin(name).ok_or_else(|| {
-                SecurityError::ConfigError(format!("plugin not found: {name}"))
-            })
+            get_plugin(name)
+                .ok_or_else(|| SecurityError::ConfigError(format!("plugin not found: {name}")))
         }
     }
 }

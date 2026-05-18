@@ -34,8 +34,8 @@ use std::sync::Arc;
 pub mod builtins;
 pub mod loader;
 
-pub use loader::PluginLoader;
 pub use builtins::NoOpSecurityPlugin;
+pub use loader::PluginLoader;
 
 /// Security context passed to plugin check methods.
 #[derive(Debug, Clone)]
@@ -90,7 +90,10 @@ pub enum SensitivityLevel {
 impl SensitivityLevel {
     /// Returns true if this level requires masking.
     pub fn requires_masking(self) -> bool {
-        matches!(self, SensitivityLevel::Sensitive | SensitivityLevel::Confidential)
+        matches!(
+            self,
+            SensitivityLevel::Sensitive | SensitivityLevel::Confidential
+        )
     }
 
     /// Returns true if this level must not be persisted.
@@ -187,16 +190,15 @@ impl dyn SecurityPlugin {
 // Plugin Registry
 // ---------------------------------------------------------------------------
 
-use std::collections::HashMap;
 use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 /// Global plugin factory registry.
 ///
 /// Third-party plugins register themselves here via [`register_plugin`].
-static PLUGIN_REGISTRY: Lazy<Arc<Mutex<HashMap<&'static str, fn() -> Box<dyn SecurityPlugin>>>> =
+static PLUGIN_REGISTRY: Lazy<Arc<Mutex<HashMap<&'static str, fn() -> Box<dyn SecurityPlugin>>>>> =
     Lazy::new(|| Arc::new(Mutex::new(HashMap::new())));
-
-use std::sync::Mutex;
 
 /// Register a plugin factory with the global registry.
 ///

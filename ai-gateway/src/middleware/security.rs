@@ -3,8 +3,8 @@
 //! This module provides Tower middleware integration for the security plugin system.
 //! Plugins are executed as part of the request/response middleware chain.
 
-use std::sync::Arc;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use axum::body::Body;
