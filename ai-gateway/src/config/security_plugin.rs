@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::plugin::loader::{PluginConfig, SecurityPluginsConfig};
 
 /// Security plugin configuration.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct SecurityPluginConfiguration {
     /// Enable security plugins.
@@ -14,7 +14,7 @@ pub struct SecurityPluginConfiguration {
 
     /// Plugin configurations.
     #[serde(default)]
-    pub plugins: Vec<PluginConfig>,
+    pub plugins: Vec<crate::plugin::loader::PluginConfig>,
 }
 
 const fn default_enabled() -> bool {

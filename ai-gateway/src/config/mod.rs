@@ -63,7 +63,7 @@ pub enum Error {
     InvalidS3UrlStyle(String),
 }
 
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct MiddlewareConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -98,7 +98,7 @@ fn default_dedup_window_secs() -> u64 {
     10
 }
 
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
 pub struct Config {
     pub telemetry: telemetry::Config,

@@ -94,11 +94,11 @@ where
     type Error = S::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
-    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
 
-    fn call(&self, req: Request<B>) -> Self::Future {
+    fn call(&mut self, req: Request<B>) -> Self::Future {
         // Extract virtual key from headers or use default
         let vk_id = req
             .headers()
