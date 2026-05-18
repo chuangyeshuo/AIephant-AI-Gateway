@@ -115,7 +115,7 @@ impl SensitiveDataDetector {
                 let level = if self.config.field_levels.contains(field) {
                     SensitivityLevel::Confidential
                 } else {
-                    SensitivityLevel::default_sensitivity_for_field(field)
+                    SensitivityLevel::default_for_field(field)
                 };
 
                 if level.must_not_persist() {

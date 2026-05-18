@@ -24,7 +24,7 @@ pub struct PluginConfig {
     pub priority: Option<i32>,
     /// Plugin-specific configuration.
     #[serde(default)]
-    pub config: toml::Value,
+    pub config: Option<toml::Value>,
 }
 
 /// Default value for enabled field.
@@ -41,6 +41,7 @@ pub struct SecurityPluginsConfig {
 }
 
 /// Loaded plugin instance with metadata.
+#[derive(Debug)]
 struct LoadedPlugin {
     /// The plugin instance.
     plugin: Arc<dyn SecurityPlugin>,
@@ -74,7 +75,7 @@ impl PluginLoader {
                 continue;
             }
 
-            let plugin = create_plugin(&plugin_config.name, &plugin_config.config)?;
+            let plugin = create_plugin(&plugin_config.name, plugin_config.config.as_ref())?;
 
             let priority = plugin_config.priority.unwrap_or_else(|| plugin.priority());
 
@@ -136,18 +137,21 @@ impl Default for PluginLoader {
 /// Create a plugin instance by name with optional configuration.
 fn create_plugin(
     name: &str,
-    config: &toml::Value,
+    config: Option<&toml::Value>,
 ) -> Result<Arc<dyn SecurityPlugin>, SecurityError> {
     match name {
         "noop" => Ok(Arc::new(super::NoOpSecurityPlugin)),
 
         "sensitive_data_detector" => {
-            let detector_config = if config.is_empty() {
-                SensitiveDataDetectorConfig::default()
-            } else {
-                config.try_into().map_err(|e: toml::de::Error| {
-                    SecurityError::ConfigError(format!("sensitive_data_detector: {e}"))
-                })?
+            let detector_config = match config {
+                Some(toml::Value::Table(table)) if table.is_empty() => {
+                    SensitiveDataDetectorConfig::default()
+                }
+                Some(c) => {
+                    SensitiveDataDetectorConfig::try_from(c)
+                        .map_err(|e| SecurityError::ConfigError(format!("sensitive_data_detector: {e}")))?
+                }
+                None => SensitiveDataDetectorConfig::default(),
             };
             Ok(Arc::new(SensitiveDataDetector::with_config(
                 detector_config,
@@ -155,20 +159,26 @@ fn create_plugin(
         }
 
         "data_classifier" => {
-            let classifier_config = if config.is_empty() {
-                DataClassifierConfig::default()
-            } else {
-                config.try_into().map_err(|e: toml::de::Error| {
-                    SecurityError::ConfigError(format!("data_classifier: {e}"))
-                })?
+            let classifier_config = match config {
+                Some(toml::Value::Table(table)) if table.is_empty() => {
+                    DataClassifierConfig::default()
+                }
+                Some(c) => {
+                    DataClassifierConfig::try_from(c)
+                        .map_err(|e| SecurityError::ConfigError(format!("data_classifier: {e}")))?
+                }
+                None => DataClassifierConfig::default(),
             };
-            Ok(Arc::new(DataClassifier::with_config(classifier_config)))
+            Ok(Arc::new(DataClassifier::with_config(
+                classifier_config,
+            )))
         }
 
         _ => {
             // Try to get from registry (for third-party plugins)
-            get_plugin(name)
-                .ok_or_else(|| SecurityError::ConfigError(format!("plugin not found: {name}")))
+            let boxed = get_plugin(name)
+                .ok_or_else(|| SecurityError::ConfigError(format!("plugin not found: {name}")))?;
+            Ok(Arc::from(boxed))
         }
     }
 }

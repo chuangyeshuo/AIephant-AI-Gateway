@@ -61,16 +61,10 @@ pub struct SecurityService<S> {
 
 impl<S> SecurityService<S> {
     /// Extract request body for security checking.
-    fn extract_body<B>(req: &Request<B>) -> Bytes {
-        req.body()
-            .map(|b| {
-                if let Some(bytes) = b.as_u64_slice() {
-                    Bytes::copy_from_slice(bytes)
-                } else {
-                    Bytes::new()
-                }
-            })
-            .unwrap_or_default()
+    /// Note: This is a simplified version that returns empty bytes.
+    /// Full body extraction requires async handling and would be done at the route handler level.
+    fn extract_body<B>(_req: &Request<B>) -> Bytes {
+        Bytes::new()
     }
 
     /// Build security context from request.

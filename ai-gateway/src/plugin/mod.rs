@@ -76,10 +76,11 @@ pub enum SecurityError {
 }
 
 /// Data sensitivity classification levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SensitivityLevel {
     /// Public data, can be logged without restriction.
+    #[default]
     Public,
     /// Sensitive data, requires masking in logs.
     Sensitive,
@@ -99,6 +100,24 @@ impl SensitivityLevel {
     /// Returns true if this level must not be persisted.
     pub fn must_not_persist(self) -> bool {
         matches!(self, SensitivityLevel::Confidential)
+    }
+
+    /// Returns the default sensitivity level for a given field name.
+    pub fn default_for_field(field: &str) -> SensitivityLevel {
+        let lower = field.to_lowercase();
+        match lower.as_str() {
+            "password" | "token" | "secret" | "api_key" | "apikey" | "private_key" => {
+                SensitivityLevel::Confidential
+            }
+            "phone" | "tel" | "mobile" | "email" | "id_card" | "idcard" | "passport" | "ssn" => {
+                SensitivityLevel::Sensitive
+            }
+            "bank_account" | "bankaccount" | "credit_card" | "creditcard" | "card_number" => {
+                SensitivityLevel::Confidential
+            }
+            "medical" | "health" | "legal" | "court" => SensitivityLevel::Sensitive,
+            _ => SensitivityLevel::Public,
+        }
     }
 }
 
@@ -132,7 +151,7 @@ impl SensitivityLevel {
 ///     }
 /// }
 /// ```
-pub trait SecurityPlugin: Send + Sync {
+pub trait SecurityPlugin: Send + Sync + std::fmt::Debug {
     /// Check if a request is allowed to proceed.
     ///
     /// This is called before the request is forwarded to the provider.

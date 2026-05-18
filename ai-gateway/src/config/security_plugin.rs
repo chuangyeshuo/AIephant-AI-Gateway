@@ -1,13 +1,11 @@
 //! Security plugin configuration.
-//!
-//! Configuration for the security plugin system.
 
 use serde::{Deserialize, Serialize};
 
 use crate::plugin::loader::{PluginConfig, SecurityPluginsConfig};
 
 /// Security plugin configuration.
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct SecurityPluginConfiguration {
     /// Enable security plugins.
