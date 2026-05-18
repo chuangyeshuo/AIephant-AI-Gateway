@@ -140,7 +140,7 @@ fn create_plugin(
     config: Option<&toml::Value>,
 ) -> Result<Arc<dyn SecurityPlugin>, SecurityError> {
     match name {
-        "noop" => Ok(Arc::new(super::NoOpSecurityPlugin)),
+        "noop" => Ok(Arc::new(crate::plugin::NoOpSecurityPlugin)),
 
         "sensitive_data_detector" => {
             let detector_config = match config {

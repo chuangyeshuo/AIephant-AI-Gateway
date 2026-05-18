@@ -19,6 +19,9 @@ use super::{
 ///
 /// This is the default plugin when no other plugins are configured,
 /// ensuring the security layer always has a valid implementation.
+#[derive(Debug, Clone, Default)]
+pub struct NoOpSecurityPlugin;
+
 impl SecurityPlugin for NoOpSecurityPlugin {
     fn name(&self) -> &'static str {
         "noop"
