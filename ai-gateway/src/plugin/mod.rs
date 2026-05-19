@@ -76,8 +76,7 @@ pub enum SecurityError {
 }
 
 /// Data sensitivity classification levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum SensitivityLevel {
     /// Public data, can be logged without restriction.
     #[default]

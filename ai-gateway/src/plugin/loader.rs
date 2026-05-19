@@ -13,7 +13,7 @@ use super::builtins::{
 use super::{ResponseData, SecurityContext, SecurityError, SecurityPlugin, get_plugin};
 
 /// Plugin loading configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PluginConfig {
     /// Plugin name.
     pub name: String,
@@ -26,6 +26,8 @@ pub struct PluginConfig {
     #[serde(default)]
     pub config: Option<toml::Value>,
 }
+
+impl Eq for PluginConfig {}
 
 /// Default value for enabled field.
 const fn default_enabled() -> bool {
