@@ -9,9 +9,10 @@ use std::task::{Context, Poll};
 
 use bytes::Bytes;
 use http::{Request, Response};
+use http_body_util::BodyExt;
 use tower::{Layer, Service};
 
-use crate::plugin::{PluginLoader, SecurityContext};
+use crate::plugin::{PluginLoader, ResponseData, SecurityContext};
 use crate::types::body::Body;
 
 /// Security middleware layer.
@@ -60,35 +61,28 @@ pub struct SecurityService<S> {
 }
 
 impl<S> SecurityService<S> {
-    /// Extract request body for security checking.
-    /// Note: This is a simplified version that returns empty bytes.
-    /// Full body extraction requires async handling and would be done at the route handler level.
-    fn extract_body<B>(_req: &Request<B>) -> Bytes {
-        Bytes::new()
-    }
-
     /// Build security context from request.
-    fn build_context<B>(req: &Request<B>, vk_id: String) -> SecurityContext {
+    fn build_context(req: &Request<Body>, vk_id: String, request_body: Bytes) -> SecurityContext {
         SecurityContext {
             virtual_key_id: vk_id,
             provider: req
                 .uri()
                 .path()
                 .split('/')
-                .nth(2)
+                .find(|segment| !segment.is_empty())
                 .unwrap_or("unknown")
                 .to_string(),
-            request_body: Self::extract_body(req),
+            request_body,
             workspace_id: None,
         }
     }
 }
 
-impl<S, B> Service<Request<B>> for SecurityService<S>
+impl<S> Service<Request<Body>> for SecurityService<S>
 where
-    S: Service<Request<B>, Response = Response<Body>> + Clone + Send + 'static,
+    S: Service<Request<Body>, Response = Response<Body>> + Clone + Send + 'static,
     S::Future: Send + 'static,
-    B: Send + 'static,
+    S::Error: Send + 'static,
 {
     type Response = Response<Body>;
     type Error = S::Error;
@@ -98,7 +92,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, req: Request<B>) -> Self::Future {
+    fn call(&mut self, req: Request<Body>) -> Self::Future {
         // Extract virtual key from headers or use default
         let vk_id = req
             .headers()
@@ -107,30 +101,67 @@ where
             .unwrap_or("default")
             .to_string();
 
-        let ctx = Self::build_context(&req, vk_id);
         let loader = self.loader.clone();
-
-        // Pre-check: validate request against plugins
-        if let Err(e) = loader.check_request(&ctx) {
-            // Return early with security error response
-            let response = Response::builder()
-                .status(403)
-                .body(Body::from(format!("security check failed: {e}")))
-                .unwrap();
-            return Box::pin(async { Ok(response) });
-        }
-
-        // Call downstream service
-        let fut = self.inner.call(req);
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
+        let (parts, body) = req.into_parts();
 
         Box::pin(async move {
-            let res = fut.await?;
+            let body_bytes = match body.collect().await {
+                Ok(collected) => collected.to_bytes(),
+                Err(e) => {
+                    let response = Response::builder()
+                        .status(400)
+                        .body(Body::from(format!(
+                            "security request body read failed: {e}"
+                        )))
+                        .expect("security error response should build");
+                    return Ok(response);
+                }
+            };
 
-            // Post-process: mask response if needed
-            // Note: In a full implementation, we'd extract response body here
-            // and apply mask_response. For now, we just pass through.
+            let req = Request::from_parts(parts, Body::from(body_bytes.clone()));
+            let ctx = Self::build_context(&req, vk_id, body_bytes);
 
-            Ok(res)
+            // Pre-check: validate request against plugins
+            if let Err(e) = loader.check_request(&ctx) {
+                let response = Response::builder()
+                    .status(403)
+                    .body(Body::from(format!("security check failed: {e}")))
+                    .expect("security error response should build");
+                return Ok(response);
+            }
+
+            let res = inner.call(req).await?;
+            let (parts, body) = res.into_parts();
+            let response_bytes = match body.collect().await {
+                Ok(collected) => collected.to_bytes(),
+                Err(e) => {
+                    let response = Response::builder()
+                        .status(500)
+                        .body(Body::from(format!(
+                            "security response body read failed: {e}"
+                        )))
+                        .expect("security error response should build");
+                    return Ok(response);
+                }
+            };
+
+            let mut data = ResponseData {
+                body: response_bytes,
+                sensitive: false,
+            };
+            if let Err(e) = loader.mask_response(&mut data) {
+                let response = Response::builder()
+                    .status(500)
+                    .body(Body::from(format!("security response masking failed: {e}")))
+                    .expect("security error response should build");
+                return Ok(response);
+            }
+
+            let mut parts = parts;
+            parts.headers.remove(http::header::CONTENT_LENGTH);
+            Ok(Response::from_parts(parts, Body::from(data.body)))
         })
     }
 }
@@ -152,5 +183,84 @@ impl<S: Clone> SecurityExt for S {
             inner: self,
             loader: Arc::new(loader),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::convert::Infallible;
+
+    use http_body_util::BodyExt;
+    use tower::{ServiceExt, service_fn};
+
+    use super::*;
+    use crate::plugin::loader::{PluginConfig, SecurityPluginsConfig};
+
+    fn sensitive_data_loader() -> PluginLoader {
+        PluginLoader::from_config(&SecurityPluginsConfig {
+            plugins: vec![PluginConfig {
+                name: "sensitive_data_detector".to_string(),
+                enabled: true,
+                priority: Some(10),
+                config: None,
+            }],
+        })
+        .expect("loader should build")
+    }
+
+    #[tokio::test]
+    async fn security_layer_reads_request_body_and_blocks_sensitive_payload() {
+        let inner = service_fn(|_req: Request<Body>| async move {
+            Ok::<_, Infallible>(Response::new(Body::from(r#"{"ok":true}"#)))
+        });
+        let mut service = SecurityLayer::new(sensitive_data_loader()).layer(inner);
+
+        let req = Request::builder()
+            .uri("/anthropic/v1/messages")
+            .body(Body::from(r#"{"api_key":"secret"}"#))
+            .expect("request should build");
+
+        let res = service
+            .ready()
+            .await
+            .expect("ready")
+            .call(req)
+            .await
+            .unwrap();
+
+        assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn security_layer_masks_response_body() {
+        let inner = service_fn(|_req: Request<Body>| async move {
+            Ok::<_, Infallible>(Response::new(Body::from(
+                r#"{"email":"person@example.com","message":"ok"}"#,
+            )))
+        });
+        let mut service = SecurityLayer::new(sensitive_data_loader()).layer(inner);
+
+        let req = Request::builder()
+            .uri("/anthropic/v1/messages")
+            .body(Body::from(r#"{"message":"ok"}"#))
+            .expect("request should build");
+
+        let res = service
+            .ready()
+            .await
+            .expect("ready")
+            .call(req)
+            .await
+            .unwrap();
+        let body = res
+            .into_body()
+            .collect()
+            .await
+            .expect("body should collect")
+            .to_bytes();
+        let body = String::from_utf8(body.to_vec()).expect("utf8 body");
+
+        assert!(body.contains(r#""email":"***MASKED***""#));
+        assert!(body.contains(r#""message":"ok""#));
     }
 }

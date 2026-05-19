@@ -63,7 +63,7 @@ pub enum Error {
     InvalidS3UrlStyle(String),
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct MiddlewareConfig {
     #[serde(skip_serializing_if = "Option::is_none")]

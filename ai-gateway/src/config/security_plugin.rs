@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::plugin::loader::SecurityPluginsConfig;
 
 /// Security plugin configuration.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct SecurityPluginConfiguration {
     /// Enable security plugins.
