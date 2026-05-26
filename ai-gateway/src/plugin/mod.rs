@@ -16,14 +16,27 @@
 //! Plugins are registered via the global [`PLUGIN_REGISTRY`], which supports
 //! both built-in and third-party plugins.
 //!
-//! # Usage
+//! # Configuration
+//!
+//! Security plugins are configured under `global.security` or `unified_api.security`:
 //!
 //! ```yaml
-//! security:
-//!   plugins:
-//!     - name: "sensitive_data_detector"
-//!       enabled: true
-//!       priority: 10
+//! # In config.yaml - either global or unified_api section
+//! global:
+//!   security:
+//!     enabled: true
+//!     plugins:
+//!       - name: "sensitive_data_detector"
+//!         enabled: true
+//!         priority: 10
+//!
+//! unified_api:
+//!   security:
+//!     enabled: true
+//!     plugins:
+//!       - name: "sensitive_data_detector"
+//!         enabled: true
+//!         priority: 10
 //! ```
 //!
 //! Third-party plugins can use the [`register_plugin`] macro.

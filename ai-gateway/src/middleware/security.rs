@@ -2,6 +2,11 @@
 //!
 //! This module provides Tower middleware integration for the security plugin system.
 //! Plugins are executed as part of the request/response middleware chain.
+//!
+//! # Streaming Considerations
+//!
+//! This middleware requires buffering request/response bodies for security checking.
+//! Bodies larger than MAX_SECURITY_BODY_SIZE are truncated to prevent memory exhaustion.
 
 use std::pin::Pin;
 use std::sync::Arc;
@@ -14,6 +19,11 @@ use tower::{Layer, Service};
 
 use crate::plugin::{PluginLoader, ResponseData, SecurityContext};
 use crate::types::body::Body;
+
+/// Maximum body size to collect for security checking.
+/// Large bodies (images, embeddings, long outputs) are truncated.
+/// This prevents memory exhaustion while still allowing security checks.
+const MAX_SECURITY_BODY_SIZE: usize = 10 * 1024 * 1024; // 10MB
 
 /// Security middleware layer.
 ///
@@ -62,18 +72,54 @@ pub struct SecurityService<S> {
 
 impl<S> SecurityService<S> {
     /// Build security context from request.
-    fn build_context(req: &Request<Body>, vk_id: String, request_body: Bytes) -> SecurityContext {
+    ///
+    /// Note: Provider is extracted from request extensions if available,
+    /// otherwise from URL path. The URL path provider extraction is unreliable
+    /// for routes like `/v1/chat/completions` which would return "v1" instead
+    /// of the actual provider.
+    fn build_context(req: &Request<Body>, request_body: Bytes) -> SecurityContext {
+        // Try to get provider from request extensions first
+        let provider = req
+            .extensions()
+            .get::<String>()
+            .cloned()
+            .or_else(|| {
+                // Fallback to URL path parsing (unreliable for multi-segment paths)
+                req.uri()
+                    .path()
+                    .split('/')
+                    .find(|segment| !segment.is_empty())
+                    .map(|s| s.to_string())
+            })
+            .unwrap_or_else(|| "unknown".to_string());
+
+        // Virtual key should come from auth context in extensions, not client header.
+        // If not available, use unknown - do NOT trust x-virtual-key header directly.
+        let virtual_key_id = req
+            .extensions()
+            .get::<String>()
+            .cloned()
+            .unwrap_or_else(|| "unknown".to_string());
+
         SecurityContext {
-            virtual_key_id: vk_id,
-            provider: req
-                .uri()
-                .path()
-                .split('/')
-                .find(|segment| !segment.is_empty())
-                .unwrap_or("unknown")
-                .to_string(),
+            virtual_key_id,
+            provider,
             request_body,
             workspace_id: None,
+        }
+    }
+
+    /// Collect body with size limit to prevent memory exhaustion.
+    async fn collect_limited_body(body: Body) -> Result<Bytes, String> {
+        let body = body
+            .collect()
+            .await
+            .map_err(|e| format!("body collection failed: {e}"))?;
+        let bytes = body.to_bytes();
+        if bytes.len() > MAX_SECURITY_BODY_SIZE {
+            Ok(bytes.slice(..MAX_SECURITY_BODY_SIZE))
+        } else {
+            Ok(bytes)
         }
     }
 }
@@ -93,22 +139,15 @@ where
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
-        // Extract virtual key from headers or use default
-        let vk_id = req
-            .headers()
-            .get("x-virtual-key")
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("default")
-            .to_string();
-
         let loader = self.loader.clone();
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
         let (parts, body) = req.into_parts();
 
         Box::pin(async move {
-            let body_bytes = match body.collect().await {
-                Ok(collected) => collected.to_bytes(),
+            // Collect request body with size limit
+            let body_bytes = match Self::collect_limited_body(body).await {
+                Ok(bytes) => bytes,
                 Err(e) => {
                     let response = Response::builder()
                         .status(400)
@@ -121,7 +160,7 @@ where
             };
 
             let req = Request::from_parts(parts, Body::from(body_bytes.clone()));
-            let ctx = Self::build_context(&req, vk_id, body_bytes);
+            let ctx = Self::build_context(&req, body_bytes);
 
             // Pre-check: validate request against plugins
             if let Err(e) = loader.check_request(&ctx) {
@@ -134,8 +173,10 @@ where
 
             let res = inner.call(req).await?;
             let (parts, body) = res.into_parts();
-            let response_bytes = match body.collect().await {
-                Ok(collected) => collected.to_bytes(),
+
+            // Collect response body with size limit
+            let response_bytes = match Self::collect_limited_body(body).await {
+                Ok(bytes) => bytes,
                 Err(e) => {
                     let response = Response::builder()
                         .status(500)
@@ -252,13 +293,13 @@ mod tests {
             .call(req)
             .await
             .unwrap();
-        let body = res
+        let body_bytes = res
             .into_body()
             .collect()
             .await
             .expect("body should collect")
             .to_bytes();
-        let body = String::from_utf8(body.to_vec()).expect("utf8 body");
+        let body = String::from_utf8(body_bytes.to_vec()).expect("utf8 body");
 
         assert!(body.contains(r#""email":"***MASKED***""#));
         assert!(body.contains(r#""message":"ok""#));

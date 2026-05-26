@@ -413,7 +413,15 @@ impl App {
             crate::middleware::gateway_in_flight_limit::GatewayInFlightLimitLayer::new(&app_state)
                 .await?;
 
-        let security_layer = match app_state.config().global.security.as_ref() {
+        // Security config can be in global or unified_api section.
+        // Global takes precedence; unified_api is the fallback.
+        let security_config = app_state.config().global.security.as_ref().or(app_state
+            .config()
+            .unified_api
+            .security
+            .as_ref());
+
+        let security_layer = match security_config {
             Some(config) => match config.to_loader_config() {
                 Some(loader_config) => {
                     let loader = PluginLoader::from_config(&loader_config)
